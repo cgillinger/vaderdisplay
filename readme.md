@@ -211,7 +211,7 @@ python3 app.py
 echo "cd ~/vaderdisplay && python3 app.py &" >> ~/.bashrc
 echo "sleep 5 && chromium-browser --kiosk --disable-infobars http://localhost:8036" >> ~/.bashrc
 ```
-**Lägger till automatisk start av dashboarden och kioskläge i Chromium när systemet startar.*
+*Lägger till automatisk start av dashboarden och kioskläge i Chromium när systemet startar.*
 
 ## 🏢 Installation på Synology NAS
 
@@ -264,24 +264,27 @@ nano reference/config.py
 
 ### Steg 6: Testa manuell start
 
-**Gör script körbart och testa:**
+**Använd det medföljande startscriptet:**
 ```bash
-chmod +x start_flask_weather.sh
-./start_flask_weather.sh
+cp synology_start_script.sh start_weather.sh
+nano start_weather.sh  # Anpassa USERNAME och andra variabler
+chmod +x start_weather.sh
+./start_weather.sh
 ```
-*Gör start-scriptet körbart och testar att dashboarden startar korrekt.*
+*Kopierar exempel-startscriptet, anpassar för ditt system och testar att dashboarden startar korrekt.*
 
 ### Steg 7: Konfigurera automatisk start
 
 1. **DSM** → **Kontrollpanel** → **Uppgiftsschema**
 2. **Skapa** → **Användardefinierad script**
-3. **Användardefinierat script:**
+3. **Användare**: Välj ditt användarnamn
+4. **Användardefinierat script:**
    ```bash
    cd ~/vaderdisplay
-   ./start_flask_weather.sh
+   ./start_weather.sh
    ```
-4. **Schema**: **När systemet startas**
-5. **Aktivera uppgift**
+5. **Schema**: **När systemet startas**
+6. **Aktivera uppgift**
 
 ### Steg 8: Öppna dashboard
 
@@ -385,14 +388,14 @@ CONFIG = {
 
 **Linux:**
 ```bash
-cd ~/flask_weather
+cd ~/vaderdisplay
 python3 app.py
 ```
 
 **Synology:**
 ```bash
-cd /var/services/homes/[användarnamn]/flask_weather
-./start_flask_weather.sh
+cd ~/vaderdisplay
+./start_weather.sh
 ```
 
 ### Öppna i webbläsare
@@ -536,12 +539,12 @@ sudo ufw status
 ```bash
 which python3
 ls -la ~/vaderdisplay/
-tail -20 ~/vaderdisplay/flask.log
+tail -20 ~/vaderdisplay/weather.log
 ps aux | grep python3
 ```
 *Kontrollerar Python-sökväg, filrättigheter, loggar och aktiva Python-processer.*
 
-**Debug-läge
+#### Debug-läge
 
 **Aktivera detaljerad felsökning:**
 ```bash
@@ -666,10 +669,10 @@ echo "✅ Installation klar! Redigera reference/config.py och kör: python3 app.
 
 **Kommandopaket 6: Logghantering**
 ```bash
-tail -50 flask.log
-grep ERROR flask.log
-grep WARNING flask.log
-du -sh flask.log
+tail -50 weather.log
+grep ERROR weather.log
+grep WARNING weather.log
+du -sh weather.log
 find . -name "*.log" -mtime +7 -delete
 ```
 *Visar senaste loggar, filtrerar fel/varningar, kontrollerar loggstorlek och rensar gamla loggar.*
