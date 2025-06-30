@@ -4,7 +4,7 @@
 
 En modern, responsiv väder-dashboard som fungerar på alla skärmstorlekar och enheter. Visar väderprognos från SMHI med valfri integration av Netatmo väderstation för faktiska mätningar.
 
-![Dashboard Preview](screenshots/dashboard_preview.png)
+![Dashboard Preview](screenshots/sceenshot2.png)
 
 ## ⚡ Snabbstart (5 minuter)
 
