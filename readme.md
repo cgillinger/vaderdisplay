@@ -21,7 +21,7 @@ python3 app.py
 **För Synology NAS:**
 ```bash
 python3 -m pip install --user flask requests
-cd /var/services/homes/admin/ && git clone https://github.com/cgillinger/vaderdisplay.git && cd vaderdisplay
+cd ~ && git clone https://github.com/cgillinger/vaderdisplay.git && cd vaderdisplay
 cp reference/config_example.py reference/config.py && python3 app.py
 ```
 *Installera och starta på Synology. Öppna sedan http://SYNOLOGY-IP:8036*
@@ -227,7 +227,7 @@ echo "sleep 5 && chromium-browser --kiosk --disable-infobars http://localhost:80
 ```bash
 ssh admin@192.168.1.100
 ```
-*Ersätt `192.168.1.100` med din NAS:s IP-adress. Använd ditt admin-användarnamn och lösenord.*
+*Ersätt `192.168.1.100` med din NAS:s IP-adress och `admin` med ditt användarnamn. Använd ditt lösenord.*
 
 ### Steg 3: Installera Python-beroenden
 
@@ -242,7 +242,7 @@ python3 -c "import flask, requests; print('✅ Python-beroenden installerade på
 
 **Alternativ A: Via SSH/Git**
 ```bash
-cd /var/services/homes/admin/
+cd ~
 git clone https://github.com/cgillinger/vaderdisplay.git
 cd vaderdisplay
 ```
@@ -250,7 +250,7 @@ cd vaderdisplay
 
 **Alternativ B: Via File Station (GUI)**
 1. Öppna **File Station** i DSM
-2. Navigera till `/homes/admin/`
+2. Navigera till din **hemkatalog** (vanligtvis `/homes/ditt-användarnamn/`)
 3. Ladda upp `vaderdisplay.zip` och packa upp
 
 ### Steg 5: Konfigurera
@@ -277,7 +277,7 @@ chmod +x start_flask_weather.sh
 2. **Skapa** → **Användardefinierad script**
 3. **Användardefinierat script:**
    ```bash
-   cd /var/services/homes/admin/vaderdisplay
+   cd ~/vaderdisplay
    ./start_flask_weather.sh
    ```
 4. **Schema**: **När systemet startas**
@@ -535,8 +535,8 @@ sudo ufw status
 **Kommandopaket 4: Synology-diagnostik**
 ```bash
 which python3
-ls -la /var/services/homes/admin/vaderdisplay/
-tail -20 /var/services/homes/admin/vaderdisplay/flask.log
+ls -la ~/vaderdisplay/
+tail -20 ~/vaderdisplay/flask.log
 ps aux | grep python3
 ```
 *Kontrollerar Python-sökväg, filrättigheter, loggar och aktiva Python-processer.*
@@ -710,15 +710,15 @@ python3 app.py
 
 Detta projekt är open source. Se LICENSE-filen för detaljer.
 
-## 🙏 Tack
+## 🙏 Tack till
 
-- **SMHI**: För öppen väder-API
+- **SMHI**: För öppet väder-API
 - **Netatmo**: För väderstation-API
 - **Weather Icons**: För professionella väderikoner
-- **Flask**: För robust web-ramverk
+- **Flask**: För robust webbramverk
 
 ---
 
 **🌤️ Lycka till med din väder-dashboard!**
 
-För frågor och support, skapa en issue på GitHub eller kontakta projektmaintainers.
+För frågor och support, skapa en issue på GitHub eller kontakta projektansvariga.
