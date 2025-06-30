@@ -6,22 +6,30 @@
 # =============================================================================
 
 CONFIG = {
+    # ⚡ HUVUDINSTÄLLNING: Välj mellan SMHI-only eller SMHI+Netatmo
+    # 📊 False = SMHI-only (STANDARD) - Enbart väderprognos från SMHI
+    # 🏠 True = SMHI+Netatmo - Prognos från SMHI + faktisk data från din väderstation
+    'use_netatmo': False,  # ← ÄNDRA TILL True OM du har Netatmo-väderstation
+    
     'smhi': {
         # 📍 OFFENTLIGA KOORDINATER - Stockholm som standard
         'latitude': 59.3293,    # Stockholm koordinater (offentlig information)
-        'longitude': 18.0686,   # Andra städer: Göteborg 57.7089,11.9746 | Malmö 55.6050,13.0038 | Uppsala 59.8586,17.6389
+        'longitude': 18.0686,   # Andra städer: Täby/Ellagård 59.4644,18.0698 | Göteborg 57.7089,11.9746 | Malmö 55.6050,13.0038 | Uppsala 59.8586,17.6389
+        # 💡 TIPS: Täby/Ellagård (59.4644, 18.0698) kan ge mer representativ data för Netatmo-jämförelser
     },
     
     'netatmo': {
-        # 🔐 KÄNSLIGA NETATMO API-UPPGIFTER - Fyll i dina riktiga värden
+        # 🔐 KÄNSLIGA NETATMO API-UPPGIFTER - Behövs ENDAST om use_netatmo=True
+        # ⚠️  Lämna som de är om du bara vill använda SMHI (use_netatmo=False)
         'client_id': 'YOUR_NETATMO_CLIENT_ID_HERE',              # Från https://dev.netatmo.com/apps
         'client_secret': 'YOUR_NETATMO_CLIENT_SECRET_HERE',      # Från https://dev.netatmo.com/apps  
         'refresh_token': 'YOUR_NETATMO_REFRESH_TOKEN_HERE',      # Från första OAuth-autentiseringen
         'preferred_station': 'Utomhus',  # Vilken station som prioriteras för visning (smart blending använder alla)
+        'comment': 'Konfiguration för Netatmo-väderstation. Ignoreras helt om use_netatmo=False.'
     },
     
     'ipgeolocation': {
-        # 🔐 KÄNSLIG API-NYCKEL - Fyll i din riktiga nyckel
+        # 🔐 KÄNSLIG API-NYCKEL - Fyll i din riktiga nyckel (VALFRITT)
         'api_key': 'YOUR_IPGEOLOCATION_API_KEY_HERE',           # Gratis från https://ipgeolocation.io/
         'comment': 'Hämta gratis API-nyckel från https://ipgeolocation.io/ för exakta soltider. Om tom används förenklad beräkning.'
     },
@@ -36,7 +44,7 @@ CONFIG = {
         # 🎛️ OFFENTLIGA UI-INSTÄLLNINGAR - Anpassa efter behov
         'fullscreen': True,                      # True/False - Fullskärmsläge för kiosk
         'refresh_interval_minutes': 15,         # 5-60 minuter - SMHI data-uppdatering (rekommenderat: 15)
-        'netatmo_refresh_interval_minutes': 10, # 5-30 minuter - Netatmo snabb-uppdatering (rekommenderat: 10)
+        'netatmo_refresh_interval_minutes': 10, # 5-30 minuter - Netatmo snabb-uppdatering (ignoreras om use_netatmo=False)
         
         # VINDENHETER - AKTIV: 'land' (svensk landterminologi)
         'wind_unit': 'land',    # ALTERNATIV: 'sjo', 'land', 'beaufort', 'ms', 'kmh' (se guide nedan)
@@ -63,31 +71,57 @@ CONFIG = {
 }
 
 # =============================================================================
-# 🚀 SNABB SETUP-GUIDE
+# 🎯 VIKTIGT: FÖRSTÅ SKILLNADEN MELLAN LÄGENA
 # =============================================================================
 
-# 1. KOPIERA DENNA FIL:
-#    cp config.example.py config.py
+# 📊 SMHI-ONLY LÄGE (use_netatmo = False) - STANDARD & REKOMMENDERAT FÖR NYBÖRJARE
+# ✅ Fungerar direkt utan extra setup
+# ✅ Visar väderprognos från SMHI
+# ✅ Visar luftfuktighet från SMHI observationer  
+# ✅ Visar lufttryck från SMHI
+# ✅ Enkel trycktrend baserad på SMHI-data
+# ❌ Ingen faktisk temperatur från din plats
+# ❌ Ingen CO2-mätning eller ljudnivå
 
-# 2. SKAFFA NETATMO API-UPPGIFTER:
-#    - Gå till https://dev.netatmo.com/apps
-#    - Skapa en ny app eller använd befintlig
-#    - Anteckna Client ID och Client Secret
-#    - Genomför OAuth-flow för att få refresh_token
+# 🏠 SMHI+NETATMO LÄGE (use_netatmo = True) - FÖR AVANCERADE ANVÄNDARE MED VÄDERSTATION
+# ✅ Allt från SMHI-only läget PLUS:
+# ✅ Faktisk temperatur från din Netatmo-väderstation
+# ✅ CO2-mätning och luftkvalitet
+# ✅ Ljudnivå-mätning
+# ✅ Avancerad trycktrend baserad på Netatmo-historik
+# ✅ Smart data-blending från flera stationer
+# ❌ Kräver Netatmo-väderstation och API-setup
 
-# 3. SKAFFA IPGEOLOCATION API-NYCKEL (VALFRITT):
-#    - Gå till https://ipgeolocation.io/
-#    - Registrera dig för gratis konto
-#    - Kopiera din API-nyckel
-#    - (Om du hoppar över detta används förenklad solberäkning)
+# 💡 REKOMMENDATION: Börja med use_netatmo=False, uppgradera senare om du skaffar väderstation
 
-# 4. FYLL I DINA VÄRDEN I config.py:
-#    - Ersätt alla 'YOUR_*_HERE' med riktiga värden
-#    - Ändra koordinater om du inte bor i Stockholm
-#    - Anpassa location_name till ditt ortnamn
+# =============================================================================
+# 🚀 SNABB SETUP-GUIDE FÖR NYBÖRJARE
+# =============================================================================
 
-# 5. TESTA KONFIGURATIONEN:
-#    python3 app.py
+# 🎯 STEG 1: GRUNDSETUP (SMHI-ONLY)
+#    1. Kopiera denna fil: cp config.example.py config.py
+#    2. Öppna config.py i en texteditor
+#    3. Ändra koordinater om du inte bor i Stockholm (se städer nedan)
+#    4. Ändra location_name till ditt ortnamn
+#    5. Spara filen och kör: python3 app.py
+#    ✅ KLART! Du har en fungerande väder-dashboard
+
+# 🏠 STEG 2: LÄGG TILL NETATMO (VALFRITT - AVANCERAT)
+#    1. Skaffa Netatmo-väderstation
+#    2. Gå till https://dev.netatmo.com/apps
+#    3. Skapa en ny app eller använd befintlig
+#    4. Anteckna Client ID och Client Secret
+#    5. Genomför OAuth-flow för att få refresh_token
+#    6. Öppna config.py och sätt use_netatmo = True
+#    7. Ersätt alla 'YOUR_NETATMO_*_HERE' med riktiga värden
+#    8. Starta om: python3 app.py
+
+# 🌅 STEG 3: FÖRBÄTTRA SOLTIDER (VALFRITT)
+#    1. Gå till https://ipgeolocation.io/
+#    2. Registrera dig för gratis konto (1000 anrop/månad)
+#    3. Kopiera din API-nyckel
+#    4. Ersätt 'YOUR_IPGEOLOCATION_API_KEY_HERE' med din nyckel
+#    (Om du hoppar över detta används förenklad solberäkning)
 
 # =============================================================================
 # VINDENHETER GUIDE - Fullständig lista över tillgängliga alternativ
@@ -130,6 +164,7 @@ CONFIG = {
 # =============================================================================
 
 # Stockholm: 59.3293, 18.0686  (STANDARD)
+# Täby/Ellagård: 59.4644, 18.0698  (ALTERNATIV - närmare Netatmo-stationer)
 # Göteborg:  57.7089, 11.9746
 # Malmö:     55.6050, 13.0038
 # Uppsala:   59.8586, 17.6389
@@ -138,26 +173,64 @@ CONFIG = {
 # Västerås:  59.6162, 16.5528
 
 # =============================================================================
-# FELSÖKNING
+# FELSÖKNING - VANLIGA PROBLEM OCH LÖSNINGAR
 # =============================================================================
 
-# PROBLEM: "Import error för config"
-# LÖSNING: Kontrollera att config.py finns (ej config.example.py)
+# ❌ PROBLEM: "Import error för config"
+# ✅ LÖSNING: Kontrollera att config.py finns (ej config.example.py)
 
-# PROBLEM: "Netatmo autentiseringsfel"
-# LÖSNING: Kontrollera client_id, client_secret och refresh_token
+# ❌ PROBLEM: "Kan inte starta utan giltig konfiguration"
+# ✅ LÖSNING: Kontrollera att config.py är korrekt kopierad och har rätt format
 
-# PROBLEM: "Inga soltider"
-# LÖSNING: Kontrollera ipgeolocation api_key eller använd fallback-beräkning
+# ❌ PROBLEM: "Fel koordinater/fel väder"
+# ✅ LÖSNING: Kontrollera latitude/longitude i config.py
 
-# PROBLEM: "Vinddata visas fel"
-# LÖSNING: Kontrollera wind_unit-inställning
+# ❌ PROBLEM: "Netatmo autentiseringsfel" (ENDAST om use_netatmo=True)
+# ✅ LÖSNING: Kontrollera client_id, client_secret och refresh_token
+
+# ❌ PROBLEM: "Inga soltider eller konstiga tider"
+# ✅ LÖSNING: Kontrollera ipgeolocation api_key eller använd fallback-beräkning
+
+# ❌ PROBLEM: "Vinddata visas fel"
+# ✅ LÖSNING: Kontrollera wind_unit-inställning
+
+# ❌ PROBLEM: "Dashboard visar fel läge"
+# ✅ LÖSNING: Kontrollera use_netatmo inställningen (True/False)
+
+# =============================================================================
+# HUR DU ÄNDRAR MELLAN LÄGENA
+# =============================================================================
+
+# 📊 FÖR ATT KÖRA SMHI-ONLY (STANDARD):
+#    1. Öppna config.py
+#    2. Sätt: use_netatmo = False
+#    3. Spara filen
+#    4. Starta om: python3 app.py
+#    → Du ser bara SMHI-väderprognos
+
+# 🏠 FÖR ATT LÄGGA TILL NETATMO:
+#    1. Sätt upp Netatmo API-uppgifter först (se guide ovan)
+#    2. Öppna config.py
+#    3. Sätt: use_netatmo = True
+#    4. Spara filen
+#    5. Starta om: python3 app.py
+#    → Du ser SMHI + faktisk data från din väderstation
 
 # =============================================================================
 # SÄKERHET OCH BACKUP
 # =============================================================================
 
-# ⚠️  VIKTIGT: config.py innehåller känsliga API-nycklar
+# ⚠️  VIKTIGT: config.py innehåller känsliga API-nycklar (om du använder Netatmo)
 # 🔒 LÄGG ALDRIG till config.py i Git (är utesluten via .gitignore)
 # 💾 GÖR backup av config.py före uppdateringar
 # 🔄 Använd environment variables i produktion för extra säkerhet
+
+# =============================================================================
+# SUPPORT OCH HJÄLP
+# =============================================================================
+
+# 📚 OM DU BEHÖVER HJÄLP:
+#    1. Kontrollera att du följt setup-guiden ovan
+#    2. Kolla felsökningssektionen
+#    3. Testa med SMHI-only läget först (use_netatmo=False)
+#    4. Kontrollera loggar när du kör python3 app.py
