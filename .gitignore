@@ -7,219 +7,185 @@
 # 🔐 KÄNSLIGA KONFIGURATIONSFILER - HÖGSTA PRIORITET
 # =============================================================================
 
-# Huvudkonfiguration med API-nycklar och tokens
-config.py                    # KÄNSLIG: Innehåller Netatmo/API tokens
-reference/config.py          # KÄNSLIG: Backup-plats för config
-configbak.json              # KÄNSLIG: Eventuell JSON-backup av config
-
-# Token-filer som genereras av Netatmo OAuth
-tokens.json                  # KÄNSLIG: Netatmo access/refresh tokens
-reference/tokens.json        # KÄNSLIG: Backup-plats för tokens
-
-# API-nycklar och credentials
-*.key                        # KÄNSLIG: Eventuella API-nycklar
-*.secret                     # KÄNSLIG: Hemliga nycklar
-.env                         # KÄNSLIG: Environment variables
-.env.local                   # KÄNSLIG: Lokala environment variables
+config.py
+reference/config.py
+configbak.json
+tokens.json
+reference/tokens.json
+*.key
+*.secret
+.env
+.env.local
 
 # =============================================================================
 # 💾 PROJEKTGENERERADE CACHE- OCH DATAFILER
 # =============================================================================
 
-# Väderdata-cache (återgeneras automatiskt)
-pressure_history.json       # CACHE: Netatmo tryckhistorik för SMHI-trendanalys
-sun_cache.json              # CACHE: Soluppgång/solnedgång cache från ipgeolocation.io
-weather_cache.json          # CACHE: Eventuell allmän vädercache
-
-# Flask-specifika temporära filer
-flask.log                   # LOG: Flask-server log (kan innehålla känslig data)
-*.log                       # LOG: Alla log-filer
-logs/                       # LOG: Log-katalog
+pressure_history.json
+sun_cache.json
+weather_cache.json
+flask.log
+*.log
+logs/
 
 # =============================================================================
 # 🗂️ BACKUP-KATALOG (Håll lokal development-historik privat)
 # =============================================================================
 
-# Backup-katalogen innehåller utvecklingshistorik och ev. känslig data
-backup/                     # BACKUP: Lokal utvecklingshistorik
-backups/                    # BACKUP: Alternativ backup-katalog
+backup/
+backups/
 
 # =============================================================================
 # 🐍 PYTHON STANDARD EXCLUDES
 # =============================================================================
 
-# Bytecode och cache
-__pycache__/                # PYTHON: Bytecode cache
-*.py[cod]                   # PYTHON: Compiled Python files
-*$py.class                  # PYTHON: Python class files
-*.pyc                       # PYTHON: Bytecode files
-*.pyo                       # PYTHON: Optimized bytecode
-*.pyd                       # PYTHON: Windows extension modules
-
-# Distribution och packaging
-build/                      # PYTHON: Build artifacts
-dist/                       # PYTHON: Distribution files
-*.egg-info/                 # PYTHON: Egg metadata
-.Python                     # PYTHON: Python build files
-
-# Virtual environments (olika namnkonventioner)
-venv/                       # VENV: Virtuell miljö
-env/                        # VENV: Alternativ virtuell miljö
-ENV/                        # VENV: Environment
-.venv/                      # VENV: Gömd virtuell miljö
-pipenv/                     # VENV: Pipenv miljö
-
-# Pip
-pip-log.txt                 # PIP: Pip installation log
-pip-delete-this-directory.txt  # PIP: Pip cache artifact
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+build/
+dist/
+*.egg-info/
+.Python
+venv/
+env/
+ENV/
+.venv/
+pipenv/
+pip-log.txt
+pip-delete-this-directory.txt
 
 # =============================================================================
 # 🖥️ OPERATIVSYSTEM-SPECIFIKA FILER
 # =============================================================================
 
-# macOS
-.DS_Store                   # MACOS: Finder metadata
-.AppleDouble                # MACOS: Apple resource fork
-.LSOverride                 # MACOS: Launch Services
-Icon*                       # MACOS: Custom folder icons
-._*                         # MACOS: Resource forks
-
-# Windows
-Thumbs.db                   # WINDOWS: Thumbnail cache
-Thumbs.db:encryptable       # WINDOWS: Encrypted thumbnail cache
-ehthumbs.db                 # WINDOWS: Explorer thumbnail cache
-ehthumbs_vista.db           # WINDOWS: Vista thumbnail cache
-Desktop.ini                 # WINDOWS: Folder settings
-$RECYCLE.BIN/               # WINDOWS: Recycle bin
-*.lnk                       # WINDOWS: Shortcuts
-
-# Linux
-.directory                  # LINUX: KDE folder settings
-.Trash-*                    # LINUX: Trash folders
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon*
+._*
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+.directory
+.Trash-*
 
 # =============================================================================
 # 🛠️ IDE OCH EDITOR-SPECIFIKA FILER
 # =============================================================================
 
-# Visual Studio Code
-.vscode/                    # VSCODE: Workspace settings
-*.code-workspace            # VSCODE: Workspace files
-
-# PyCharm
-.idea/                      # PYCHARM: Project settings
-*.iml                       # PYCHARM: Module files
-
-# Sublime Text
-*.sublime-project           # SUBLIME: Project files
-*.sublime-workspace         # SUBLIME: Workspace files
-
-# Vim
-*.swp                       # VIM: Swap files
-*.swo                       # VIM: Swap files
-*~                          # VIM: Backup files
-
-# Emacs
-*~                          # EMACS: Backup files
-\#*\#                       # EMACS: Auto-save files
-.\#*                        # EMACS: Lock files
+.vscode/
+*.code-workspace
+.idea/
+*.iml
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+\#*\#
+.\#*
 
 # =============================================================================
 # 🌐 WEB-UTVECKLING TEMPORÄRA FILER
 # =============================================================================
 
-# Node.js (om JavaScript-dependencies läggs till)
-node_modules/               # NODE: Dependencies
-npm-debug.log*              # NODE: npm debug logs
-yarn-debug.log*             # NODE: Yarn debug logs
-yarn-error.log*             # NODE: Yarn error logs
-
-# CSS/SASS temporära filer
-*.css.map                   # CSS: Source maps
-.sass-cache/                # SASS: Cache
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.css.map
+.sass-cache/
 
 # =============================================================================
 # 📊 DATABAS OCH DATAANALYS FILER
 # =============================================================================
 
-# SQLite databaser (om tillagda senare)
-*.db                        # DB: SQLite databaser
-*.sqlite                    # DB: SQLite databaser
-*.sqlite3                   # DB: SQLite databaser
-
-# CSV och Excel temporära analysdata
-temp_*.csv                  # DATA: Temporära CSV-filer
-analysis_*.xlsx             # DATA: Temporära Excel-filer
+*.db
+*.sqlite
+*.sqlite3
+temp_*.csv
+analysis_*.xlsx
 
 # =============================================================================
 # 🔧 UTVECKLINGS- OCH TEST-FILER
 # =============================================================================
 
-# Test-coverage
-htmlcov/                    # TEST: Coverage HTML report
-.coverage                   # TEST: Coverage data
-.coverage.*                 # TEST: Coverage data
-coverage.xml                # TEST: Coverage XML
-*.cover                     # TEST: Coverage files
-
-# Pytest
-.pytest_cache/              # TEST: Pytest cache
-.cache/                     # TEST: General cache
-
-# Mypy type checking
-.mypy_cache/                # TYPE: Mypy cache
-.dmypy.json                 # TYPE: Mypy daemon
-dmypy.json                  # TYPE: Mypy daemon
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.pytest_cache/
+.cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
 # =============================================================================
 # 📱 RASPBERRY PI SPECIFIKA FILER
 # =============================================================================
 
-# Hardware-specifika config-filer som kan innehålla känslig info
-/boot/config.txt.backup     # RPI: Backup av boot config
-/etc/wpa_supplicant/wpa_supplicant.conf.backup  # RPI: WiFi backup
-pi_credentials.txt          # RPI: Eventuella Pi-credentials
+/boot/config.txt.backup
+/etc/wpa_supplicant/wpa_supplicant.conf.backup
+pi_credentials.txt
 
 # =============================================================================
 # 🚀 DEPLOYMENT OCH PRODUKTION
 # =============================================================================
 
-# Docker (om containrar läggs till)
-.dockerignore               # DOCKER: Docker ignore
-Dockerfile.local            # DOCKER: Lokal Dockerfile
-
-# Systemd service-filer med potentiellt känslig info
-*.service.local             # SYSTEMD: Lokala service-filer
-
-# SSL certificates
-*.pem                       # SSL: Certificate files
-*.crt                       # SSL: Certificate files
-*.key                       # SSL: Private keys
+.dockerignore
+Dockerfile.local
+*.service.local
+*.pem
+*.crt
+*.key
 
 # =============================================================================
 # ✅ EXPLICITA INKLUDERINGAR (Trots wildcard-regler ovan)
 # =============================================================================
 
-# Säkerställ att viktiga exempel-filer inkluderas
-!config.example.py          # INKLUDERA: Config-mall för GitHub
-!reference/config.example.py # INKLUDERA: Backup av config-mall
-!backup/README.md           # INKLUDERA: Backup-instruktioner (om skapad)
+!config.example.py
+!reference/config.example.py
+!backup/README.md
 
 # =============================================================================
 # 📝 UTVECKLARNOTERINGAR
 # =============================================================================
 
-# Personliga utvecklingsnotiser (kan innehålla API-info)
-TODO.personal.md            # NOTES: Personliga todos
-NOTES.private.md            # NOTES: Privata noter
-DEBUG.*.txt                 # DEBUG: Debug-filer
+TODO.personal.md
+NOTES.private.md
+DEBUG.*.txt
 
 # =============================================================================
 # 🔍 VERIFIERINGSKOMMANDO
 # =============================================================================
 
-# För att kontrollera vad som kommer inkluderas i Git:
 # git add . && git status
 # git ls-files --others --ignored --exclude-standard
-
-# För att säkerställa att känsliga filer är exkluderade:
 # git check-ignore config.py tokens.json pressure_history.json
+
+# =============================================================================
+# 🧹 EXTRA SKYDD FÖR SYNLOGY OCH BACKUPNAMNGIVNING
+# =============================================================================
+
+# Synology DSM: systemmappar med metadata
+@eaDir/
+
+# Alla backupmappar skapade enligt standardnamngivning
+backup/script_update_*/
+backup/architecture_*/
+backup/display_update_*/
+backup/config_update_*/
+backup/hotfix_*/
+backup/experimental_*/
+
+# Generellt wildcard om konventionen ändras
+backup/*_*/
+backup/**
