@@ -1,0 +1,116 @@
+.
+├── app (another copy).py
+├── app.py
+├── backup
+│   ├── detail_improvements_20250612_104226
+│   │   ├── dashboard.js
+│   │   ├── index.html
+│   │   ├── README_backup.txt
+│   │   └── styles.css
+│   ├── position_fix_20250612_104754
+│   │   ├── index.html
+│   │   ├── README_backup.txt
+│   │   └── styles.css
+│   ├── temperature_layout_20250612_094525
+│   │   ├── dashboard.js
+│   │   ├── index.html
+│   │   ├── README_backup.txt
+│   │   └── styles.css
+│   ├── time_card_layout_20250612_100638
+│   │   ├── dashboard.js
+│   │   ├── index.html
+│   │   ├── README_backup.txt
+│   │   └── styles.css
+│   └── wind_scale_scaling_20250612_114155
+│       ├── config.json
+│       ├── dashboard.js
+│       ├── index.html
+│       ├── README_backup.txt
+│       └── styles.css
+├── copy_assets_script.sh
+├── project_tree.txt
+├── reference
+│   ├── configbak.json
+│   ├── config.json
+│   └── data
+│       ├── __init__.py
+│       ├── netatmo_client.py
+│       ├── smhi_client.py
+│       └── utils.py
+├── static
+│   ├── assets
+│   │   ├── css
+│   │   │   └── icons.css
+│   │   ├── icons
+│   │   │   ├── amcharts-svg
+│   │   │   │   ├── animated
+│   │   │   │   │   ├── thunder.svg
+│   │   │   │   │   ├── weather_sagittarius.svg
+│   │   │   │   │   ├── weather-sprite.svg
+│   │   │   │   │   ├── weather_sunset.svg
+│   │   │   │   │   └── weather.svg
+│   │   │   │   ├── day
+│   │   │   │   │   ├── cloudy-day-1.svg
+│   │   │   │   │   ├── cloudy-day-2.svg
+│   │   │   │   │   ├── cloudy-day-3.svg
+│   │   │   │   │   ├── day.svg
+│   │   │   │   │   ├── rainy-1.svg
+│   │   │   │   │   ├── rainy-2.svg
+│   │   │   │   │   ├── rainy-3.svg
+│   │   │   │   │   ├── rainy-4.svg
+│   │   │   │   │   ├── rainy-5.svg
+│   │   │   │   │   ├── rainy-6.svg
+│   │   │   │   │   ├── rainy-7.svg
+│   │   │   │   │   ├── snowy-1.svg
+│   │   │   │   │   ├── snowy-2.svg
+│   │   │   │   │   ├── snowy-3.svg
+│   │   │   │   │   ├── snowy-4.svg
+│   │   │   │   │   ├── snowy-5.svg
+│   │   │   │   │   └── snowy-6.svg
+│   │   │   │   └── night
+│   │   │   │       ├── cloudy-night-1.svg
+│   │   │   │       ├── cloudy-night-2.svg
+│   │   │   │       ├── cloudy-night-3.svg
+│   │   │   │       └── night.svg
+│   │   │   └── weather-icons
+│   │   │       ├── css
+│   │   │       │   ├── weather-icons.min.css
+│   │   │       │   └── weather-icons-wind.min.css
+│   │   │       └── fonts
+│   │   │           ├── weathericons-regular-webfont.eot
+│   │   │           ├── weathericons-regular-webfont.svg
+│   │   │           ├── weathericons-regular-webfont.ttf
+│   │   │           ├── weathericons-regular-webfont.woff
+│   │   │           └── weathericons-regular-webfont.woff2
+│   │   └── README.md
+│   ├── css
+│   │   ├── CSS Syntax Fix_files
+│   │   │   ├── 27627b49-f204-4ee3-84b5-60310af3bfda.png
+│   │   │   ├── 33260845-64c1-43fa-919f-ed8ab2238604.png
+│   │   │   ├── 3615a3e9-f483-427a-97e8-de13db595d5f.png
+│   │   │   ├── 388ab93d-b7e4-40d8-8083-c9111120adbb.png
+│   │   │   ├── 494143b8-9cb4-4a80-8e24-8fb34df3ab71.png
+│   │   │   ├── 9ca9b584-cffc-4219-8ef8-ad04662debfd.png
+│   │   │   ├── afc7d8f1-a7e5-4cd0-aec4-35e947bd0226.png
+│   │   │   ├── ansi-1f6vhsjh.css
+│   │   │   ├── bd679d88-b21b-4b4c-8a24-21a27cda85b3.png
+│   │   │   ├── c93aab57-ab01-4af9-868d-43c77852d757.png
+│   │   │   ├── conversation-small-dfayqh3x.css
+│   │   │   ├── dd58d35d-58d9-4880-818d-a5b861cd6747.png
+│   │   │   ├── f50fee92-60e9-4cda-8065-959a5d51d18e.png
+│   │   │   ├── fc7a7268-ac4b-4d28-93bc-01fab408b618.png
+│   │   │   ├── FormattedText-kb0ehjj7.css
+│   │   │   ├── root-gxczc0vy.css
+│   │   │   └── sr logga.jpg
+│   │   ├── CSS Syntax Fix.html
+│   │   ├── styles (copy).css
+│   │   └── styles.css
+│   ├── images
+│   └── js
+│       └── dashboard.js
+├── sun_cache.json
+├── templates
+│   └── index.html
+└── tokens.json
+
+25 directories, 89 files

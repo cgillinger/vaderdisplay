@@ -1,0 +1,40 @@
+=== ERIC FLOWERS WEATHER ICONS I ANVÄNDNING ===
+Genererad: Mon Jun 16 03:14:07 PM CEST 2025
+
+🔍 FRÅN DASHBOARD.JS:
+
+🔍 FRÅN STYLES.CSS:
+
+🔍 FRÅN INDEX.HTML:
+
+📊 ALLA UNIKA WI-IKONER:
+
+🗂️ TILLGÄNGLIGA SVG-VERSIONER:
+wi-cloud
+wi-cloudy
+wi-day-cloudy-high
+wi-day-cloudy
+wi-day-rain-mix
+wi-day-rain
+wi-day-showers
+wi-day-sleet
+wi-day-snow
+wi-day-sunny-overcast
+wi-day-sunny
+wi-day-thunderstorm
+wi-fog
+wi-night-alt-cloudy
+wi-night-clear
+wi-night-cloudy-high
+wi-night-partly-cloudy
+wi-night-rain-mix
+wi-night-rain
+wi-night-showers
+wi-night-sleet
+wi-night-snow
+wi-night-thunderstorm
+wi-rain-mix
+wi-rain
+wi-sleet
+wi-snow
+wi-thunderstorm
