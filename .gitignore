@@ -189,3 +189,4 @@ backup/experimental_*/
 # Generellt wildcard om konventionen ändras
 backup/*_*/
 backup/**
+start_flask_weather.sh
