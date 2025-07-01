@@ -6,7 +6,6 @@ FAS 2: VILLKORSSTYRD NETATMO-FUNKTIONALITET för oberoende drift
 + CONFIG.PY: Migrerad från JSON till Python config med riktiga kommentarer
 + INTELLIGENT DATAHANTERING: Automatisk fallback till SMHI-only läge
 + FAS 2: SMHI LUFTFUKTIGHET: Integration av luftfuktighetsdata från SMHI observations-API
-+ WEATHEREFFECTS: FAS 2 - API-stöd för WeatherEffects-konfiguration och SMHI-integration
 """
 
 from flask import Flask, render_template, jsonify, request
@@ -47,11 +46,7 @@ weather_state = {
     
     # FAS 2: Netatmo-state tracking
     'use_netatmo': True,        # Läses från config
-    'netatmo_available': False, # Spårar om Netatmo faktiskt fungerar
-    
-    # FAS 2: WeatherEffects state tracking
-    'weather_effects_enabled': False,  # Läses från config
-    'weather_effects_config': None     # Cachad WeatherEffects-konfiguration
+    'netatmo_available': False  # Spårar om Netatmo faktiskt fungerar
 }
 
 # API clients (initialiseras villkorsstyrt i init_api_clients)
@@ -80,19 +75,6 @@ def load_config():
         weather_state['use_netatmo'] = use_netatmo
         print(f"🧠 FAS 2: Netatmo-läge: {'AKTIVT' if use_netatmo else 'INAKTIVT (SMHI-only)'}")
         
-        # FAS 2: WeatherEffects config-läsning
-        weather_effects_config = CONFIG.get('weather_effects', {})
-        weather_effects_enabled = weather_effects_config.get('enabled', False)
-        weather_state['weather_effects_enabled'] = weather_effects_enabled
-        weather_state['weather_effects_config'] = weather_effects_config
-        
-        print(f"🌦️ FAS 2: WeatherEffects: {'AKTIVERAT' if weather_effects_enabled else 'INAKTIVERAT'}")
-        if weather_effects_enabled:
-            rain_count = weather_effects_config.get('rain_config', {}).get('droplet_count', 50)
-            snow_count = weather_effects_config.get('snow_config', {}).get('flake_count', 25)
-            intensity = weather_effects_config.get('intensity', 'auto')
-            print(f"   🌧️ Regn: {rain_count} droppar, ❄️ Snö: {snow_count} flingor, 🎚️ Intensitet: {intensity}")
-        
         return CONFIG
         
     except ImportError as e:
@@ -118,13 +100,9 @@ def load_config_json_fallback():
         print(f"⚠️ Fallback: Konfiguration laddad från {config_path}")
         print("💡 TIP: Skapa reference/config.py för bättre kommentarer!")
         
-        # FAS 2: Fallback till False för weather_effects om det saknas i JSON
+        # FAS 2: Fallback till True om use_netatmo saknas i JSON
         weather_state['use_netatmo'] = config.get('use_netatmo', True)
-        weather_state['weather_effects_enabled'] = config.get('weather_effects', {}).get('enabled', False)
-        weather_state['weather_effects_config'] = config.get('weather_effects', {})
-        
         print(f"🧠 FAS 2: Netatmo-läge (fallback): {'AKTIVT' if weather_state['use_netatmo'] else 'INAKTIVT'}")
-        print(f"🌦️ FAS 2: WeatherEffects (fallback): {'AKTIVERAT' if weather_state['weather_effects_enabled'] else 'INAKTIVERAT'}")
         
         return config
         
@@ -135,132 +113,6 @@ def load_config_json_fallback():
     except json.JSONDecodeError as e:
         print(f"❌ JSON-fel i fallback config.json: {e}")
         return None
-
-def validate_weather_effects_config(config_data):
-    """
-    FAS 2: Validera WeatherEffects-konfiguration med robust error handling.
-    
-    Args:
-        config_data (dict): WeatherEffects-konfiguration från config.py
-        
-    Returns:
-        dict: Validerad konfiguration med fallback-värden
-    """
-    # Default-konfiguration (MagicMirror-kompatibel)
-    default_config = {
-        'enabled': False,
-        'intensity': 'auto',
-        'rain_config': {
-            'droplet_count': 50,
-            'droplet_speed': 2.0,
-            'wind_direction': 'none',
-            'enable_splashes': False
-        },
-        'snow_config': {
-            'flake_count': 25,
-            'characters': ['*', '+'],
-            'sparkle_enabled': False,
-            'min_size': 0.8,
-            'max_size': 1.5,
-            'speed': 1.0
-        },
-        'transition_duration': 1000,
-        'debug_logging': False,
-        'fallback_enabled': True,
-        'lp156wh4_optimizations': {
-            'enabled': True,
-            'contrast_boost': 1.1,
-            'brightness_boost': 1.1,
-            'gpu_acceleration': True,
-            'target_fps': 60
-        }
-    }
-    
-    if not config_data or not isinstance(config_data, dict):
-        print("⚠️ Ogiltig WeatherEffects-config, använder default")
-        return default_config
-    
-    # Deep merge med default config
-    validated_config = default_config.copy()
-    
-    # Validera top-level properties
-    for key, default_value in default_config.items():
-        if key in config_data:
-            if isinstance(default_value, dict):
-                # Deep merge för nested objects
-                validated_config[key] = {**default_value, **config_data.get(key, {})}
-            else:
-                validated_config[key] = config_data[key]
-    
-    # Validera specifika värden
-    try:
-        # Intensitet
-        valid_intensities = ['auto', 'light', 'medium', 'heavy']
-        if validated_config['intensity'] not in valid_intensities:
-            print(f"⚠️ Ogiltig intensitet '{validated_config['intensity']}', använder 'auto'")
-            validated_config['intensity'] = 'auto'
-        
-        # Rain config validering
-        rain_config = validated_config['rain_config']
-        rain_config['droplet_count'] = max(10, min(100, int(rain_config.get('droplet_count', 50))))
-        rain_config['droplet_speed'] = max(0.5, min(5.0, float(rain_config.get('droplet_speed', 2.0))))
-        
-        valid_wind_directions = ['none', 'left-to-right', 'right-to-left']
-        if rain_config.get('wind_direction') not in valid_wind_directions:
-            rain_config['wind_direction'] = 'none'
-        
-        # Snow config validering
-        snow_config = validated_config['snow_config']
-        snow_config['flake_count'] = max(10, min(50, int(snow_config.get('flake_count', 25))))
-        snow_config['min_size'] = max(0.5, min(2.0, float(snow_config.get('min_size', 0.8))))
-        snow_config['max_size'] = max(1.0, min(3.0, float(snow_config.get('max_size', 1.5))))
-        snow_config['speed'] = max(0.5, min(2.0, float(snow_config.get('speed', 1.0))))
-        
-        # Säkerställ att max_size >= min_size
-        if snow_config['max_size'] < snow_config['min_size']:
-            snow_config['max_size'] = snow_config['min_size'] + 0.5
-        
-        # Characters validering
-        if not isinstance(snow_config.get('characters'), list) or len(snow_config['characters']) == 0:
-            snow_config['characters'] = ['*', '+']
-        
-        # Transition duration
-        validated_config['transition_duration'] = max(500, min(3000, int(validated_config.get('transition_duration', 1000))))
-        
-        print("✅ WeatherEffects-konfiguration validerad")
-        
-    except (ValueError, TypeError) as e:
-        print(f"⚠️ Fel vid WeatherEffects config-validering: {e}")
-        print("🔄 Använder säkra default-värden")
-    
-    return validated_config
-
-def get_smhi_weather_effect_type(weather_symbol):
-    """
-    FAS 2: Konvertera SMHI weather symbol till WeatherEffects-typ.
-    
-    Args:
-        weather_symbol (int): SMHI vädersymbol (1-27)
-        
-    Returns:
-        str: WeatherEffects-typ ('rain', 'snow', 'sleet', 'thunder', 'clear')
-    """
-    if not isinstance(weather_symbol, (int, float)) or weather_symbol < 1 or weather_symbol > 27:
-        return 'clear'
-    
-    symbol = int(weather_symbol)
-    
-    # SMHI symbol mapping
-    if symbol in [8, 9, 10, 18, 19, 20]:          # Regnskurar och regn
-        return 'rain'
-    elif symbol in [15, 16, 17, 25, 26, 27]:      # Snöbyar och snöfall
-        return 'snow'
-    elif symbol in [12, 13, 14, 22, 23, 24]:      # Snöblandat regn
-        return 'sleet'
-    elif symbol in [11, 21]:                      # Åska
-        return 'thunder'
-    else:                                         # Klart väder (1-7)
-        return 'clear'
 
 def init_api_clients(config):
     """FAS 2: Villkorsstyrd initialisering av API-klienter."""
@@ -303,17 +155,9 @@ def init_api_clients(config):
         sun_calculator = SunCalculator(api_key)
         print(f"✅ Sol-kalkylator initierad ({'API' if api_key else 'Fallback'})")
         
-        # FAS 2: WeatherEffects sammanfattning
-        if weather_state['weather_effects_enabled']:
-            effect_config = weather_state['weather_effects_config']
-            rain_count = effect_config.get('rain_config', {}).get('droplet_count', 50)
-            snow_count = effect_config.get('snow_config', {}).get('flake_count', 25)
-            print(f"🌦️ WeatherEffects aktiverat - Regn: {rain_count}, Snö: {snow_count}")
-        
         # FAS 2: Sammanfattning av initialiserat läge
         mode_summary = "SMHI + Netatmo" if weather_state['netatmo_available'] else "SMHI-only"
-        effects_summary = " + WeatherEffects" if weather_state['weather_effects_enabled'] else ""
-        print(f"🎯 FAS 2: Systemläge - {mode_summary}{effects_summary}")
+        print(f"🎯 FAS 2: Systemläge - {mode_summary}")
         
         return True
         
@@ -345,13 +189,6 @@ def update_weather_data():
                     print(f"✅ FAS 2: SMHI-data med luftfuktighet uppdaterad - {humidity}% från {humidity_station} (ålder: {humidity_age} min)")
                 else:
                     print("⚠️ FAS 2: SMHI-data uppdaterad men ingen luftfuktighet tillgänglig")
-                
-                # FAS 2: WeatherEffects debugging
-                if weather_state['weather_effects_enabled'] and weather_state['smhi_data'].get('weather_symbol'):
-                    weather_symbol = weather_state['smhi_data']['weather_symbol']
-                    effect_type = get_smhi_weather_effect_type(weather_symbol)
-                    precipitation = weather_state['smhi_data'].get('precipitation', 0)
-                    print(f"🌦️ FAS 2: SMHI Symbol {weather_symbol} → WeatherEffect '{effect_type}' (precipitation: {precipitation}mm)")
             else:
                 print("❌ FAS 2: SMHI-data misslyckades")
         
@@ -393,18 +230,11 @@ def update_weather_data():
         
         # FAS 2: Dynamisk statusmeddelande baserat på läge
         refresh_interval = weather_state['config'].get('ui', {}).get('refresh_interval_minutes', 15)
-        status_parts = []
-        
         if weather_state['netatmo_available']:
             netatmo_interval = weather_state['config'].get('ui', {}).get('netatmo_refresh_interval_minutes', 10)
-            status_parts.append(f"SMHI + Netatmo | SMHI: {refresh_interval}min | Netatmo: {netatmo_interval}min")
+            weather_state['status'] = f"Data uppdaterad (SMHI + Netatmo) | SMHI: {refresh_interval}min | Netatmo: {netatmo_interval}min"
         else:
-            status_parts.append(f"SMHI-only | Uppdatering: {refresh_interval}min")
-        
-        if weather_state['weather_effects_enabled']:
-            status_parts.append("WeatherEffects: ON")
-        
-        weather_state['status'] = f"Data uppdaterad ({' | '.join(status_parts)})"
+            weather_state['status'] = f"Data uppdaterad (SMHI-only) | Uppdatering: {refresh_interval}min"
         
         print("✅ FAS 2: Väderdata uppdaterad")
         
@@ -560,14 +390,9 @@ def index():
     
     current_theme = get_current_theme()
     
-    # FAS 2: Tillhandahåll WeatherEffects-status till template
-    template_vars = {
-        'location_name': location_name,
-        'theme': current_theme,
-        'weather_effects_enabled': weather_state['weather_effects_enabled']
-    }
-    
-    return render_template('index.html', **template_vars)
+    return render_template('index.html', 
+                         location_name=location_name,
+                         theme=current_theme)
 
 @app.route('/api/current')
 def api_current_weather():
@@ -587,8 +412,7 @@ def api_current_weather():
         ui_config = {
             'wind_unit': weather_state['config'].get('ui', {}).get('wind_unit', 'land'),
             'use_netatmo': weather_state['use_netatmo'],  # NYT: För frontend-detektering
-            'netatmo_available': weather_state['netatmo_available'],  # NYT: Faktisk tillgänglighet
-            'weather_effects_enabled': weather_state['weather_effects_enabled']  # FAS 2: WeatherEffects-status
+            'netatmo_available': weather_state['netatmo_available']  # NYT: Faktisk tillgänglighet
         }
     
     response_data = {
@@ -603,10 +427,9 @@ def api_current_weather():
     
     # FAS 2: Debug-logging för API-respons
     mode = "SMHI + Netatmo" if formatted_netatmo else "SMHI-only"
-    effects = " + WeatherEffects" if weather_state['weather_effects_enabled'] else ""
     smhi_humidity = weather_state['smhi_data'].get('humidity') if weather_state['smhi_data'] else None
     humidity_info = f" (humidity: {smhi_humidity}%)" if smhi_humidity is not None else " (no humidity)"
-    print(f"🌐 FAS 2: API Response - {mode}{effects}{humidity_info}")
+    print(f"🌐 FAS 2: API Response - {mode}{humidity_info}")
     
     return jsonify(response_data)
 
@@ -626,7 +449,7 @@ def api_daily_forecast():
 
 @app.route('/api/status')
 def api_status():
-    """FAS 2: API endpoint för systemstatus med Netatmo-info och WeatherEffects."""
+    """FAS 2: API endpoint för systemstatus med Netatmo-info."""
     # FAS 2: Lägg till humidity-status
     smhi_humidity_available = (
         weather_state['smhi_data'] is not None and 
@@ -648,9 +471,7 @@ def api_status():
             'pressure_trend' in weather_state['netatmo_data'] and
             weather_state['netatmo_data']['pressure_trend']['trend'] != 'n/a'
         ),
-        'system_mode': 'SMHI + Netatmo' if weather_state['netatmo_available'] else 'SMHI-only',  # FAS 2: Systemläge
-        'weather_effects_enabled': weather_state['weather_effects_enabled'],  # FAS 2: WeatherEffects-status
-        'weather_effects_config_loaded': weather_state['weather_effects_config'] is not None  # FAS 2: Config-status
+        'system_mode': 'SMHI + Netatmo' if weather_state['netatmo_available'] else 'SMHI-only'  # FAS 2: Systemläge
     })
 
 @app.route('/api/theme')
@@ -689,132 +510,10 @@ def api_pressure_trend():
         'system_mode': 'SMHI + Netatmo' if weather_state['netatmo_available'] else 'SMHI-only'
     })
 
-# === FAS 2: NYT API ENDPOINT FÖR WEATHEREFFECTS ===
-
-@app.route('/api/weather-effects-config')
-def api_weather_effects_config():
-    """
-    FAS 2: API endpoint för WeatherEffects-konfiguration.
-    
-    Returns:
-        JSON: Validerad WeatherEffects-konfiguration för frontend
-    """
-    try:
-        print("🌦️ FAS 2: WeatherEffects config API anropat")
-        
-        # Kontrollera att config är laddad
-        if not weather_state['config']:
-            print("❌ FAS 2: Ingen huvudkonfiguration laddad")
-            return jsonify({
-                'error': 'Konfiguration ej tillgänglig',
-                'enabled': False,
-                'fallback_reason': 'main_config_missing'
-            }), 500
-        
-        # Hämta WeatherEffects-konfiguration
-        raw_weather_effects_config = weather_state.get('weather_effects_config', {})
-        
-        # Validera konfigurationen
-        validated_config = validate_weather_effects_config(raw_weather_effects_config)
-        
-        # Lägg till SMHI-integration data om SMHI-data finns
-        smhi_integration = {}
-        if weather_state['smhi_data']:
-            weather_symbol = weather_state['smhi_data'].get('weather_symbol')
-            precipitation = weather_state['smhi_data'].get('precipitation', 0)
-            wind_direction = weather_state['smhi_data'].get('wind_direction', 0)
-            
-            if weather_symbol:
-                effect_type = get_smhi_weather_effect_type(weather_symbol)
-                smhi_integration = {
-                    'current_weather_symbol': weather_symbol,
-                    'current_effect_type': effect_type,
-                    'current_precipitation': precipitation,
-                    'current_wind_direction': wind_direction,
-                    'last_smhi_update': weather_state.get('last_update')
-                }
-        
-        # Bygg komplett API-respons
-        api_response = {
-            **validated_config,
-            'smhi_integration': smhi_integration,
-            'api_version': '1.0',
-            'server_timestamp': datetime.now().isoformat(),
-            'config_source': 'config.py' if weather_state['config'] else 'fallback'
-        }
-        
-        # Debug-logging om aktiverat
-        if validated_config.get('debug_logging'):
-            print(f"🌦️ FAS 2: WeatherEffects config returnerad:")
-            print(f"   Enabled: {validated_config['enabled']}")
-            print(f"   Intensitet: {validated_config['intensity']}")
-            print(f"   Regn droppar: {validated_config['rain_config']['droplet_count']}")
-            print(f"   Snö flingor: {validated_config['snow_config']['flake_count']}")
-            if smhi_integration:
-                print(f"   SMHI Symbol: {smhi_integration.get('current_weather_symbol')} → {smhi_integration.get('current_effect_type')}")
-        
-        return jsonify(api_response)
-        
-    except Exception as e:
-        print(f"❌ FAS 2: Fel vid WeatherEffects config API: {e}")
-        
-        # Returnera minimal fallback-config vid fel
-        fallback_config = {
-            'enabled': False,
-            'error': 'Konfigurationsfel',
-            'fallback_reason': 'api_error',
-            'intensity': 'light',
-            'rain_config': {'droplet_count': 30, 'droplet_speed': 2.0, 'wind_direction': 'none'},
-            'snow_config': {'flake_count': 15, 'characters': ['*'], 'sparkle_enabled': False, 'min_size': 0.8, 'max_size': 1.2},
-            'transition_duration': 1000,
-            'debug_logging': True,
-            'fallback_enabled': True
-        }
-        
-        return jsonify(fallback_config), 500
-
 @app.route('/api/weather')
 def api_weather():
     """FAS 2: Alias för /api/current för bakåtkompatibilitet."""
     return api_current_weather()
-
-# === FAS 2: WEATHEREFFECTS DEBUG ENDPOINT (UTVECKLING) ===
-
-@app.route('/api/weather-effects-debug')
-def api_weather_effects_debug():
-    """
-    FAS 2: Debug-endpoint för WeatherEffects utveckling.
-    Visar detaljerad information om SMHI symbol mappning.
-    """
-    if not weather_state.get('weather_effects_config', {}).get('debug_logging', False):
-        return jsonify({'error': 'Debug-läge ej aktiverat'}), 403
-    
-    debug_info = {
-        'timestamp': datetime.now().isoformat(),
-        'weather_effects_enabled': weather_state['weather_effects_enabled'],
-        'config_loaded': weather_state['weather_effects_config'] is not None,
-        'smhi_data_available': weather_state['smhi_data'] is not None,
-    }
-    
-    # SMHI symbol mappning info
-    if weather_state['smhi_data']:
-        weather_symbol = weather_state['smhi_data'].get('weather_symbol')
-        if weather_symbol:
-            debug_info['smhi_symbol_mapping'] = {
-                'current_symbol': weather_symbol,
-                'effect_type': get_smhi_weather_effect_type(weather_symbol),
-                'symbol_range_1_7': 'clear (klart väder)',
-                'symbol_range_8_10_18_20': 'rain (regnskurar/regn)',
-                'symbol_range_11_21': 'thunder (åska → intensivt regn)',
-                'symbol_range_12_14_22_24': 'sleet (snöblandat → snö-effekt)',
-                'symbol_range_15_17_25_27': 'snow (snöbyar/snöfall)'
-            }
-    
-    # Konfiguration som används
-    if weather_state['weather_effects_config']:
-        debug_info['active_config'] = validate_weather_effects_config(weather_state['weather_effects_config'])
-    
-    return jsonify(debug_info)
 
 # === BACKGROUND TASKS ===
 
@@ -866,8 +565,8 @@ def netatmo_updater():
 # === APP INITIALIZATION ===
 
 def initialize_app():
-    print("🚀 FAS 2: Startar Flask Weather Dashboard med WeatherEffects-stöd...")
-    print("=" * 80)
+    print("🚀 FAS 2: Startar Flask Weather Dashboard med villkorsstyrd Netatmo-funktionalitet...")
+    print("=" * 70)
     
     config = load_config()
     if not config:
@@ -894,31 +593,14 @@ def initialize_app():
     else:
         print("📊 FAS 2: Netatmo-uppdaterare HOPPAS ÖVER (use_netatmo=False)")
     
-    print("=" * 80)
-    print("🌤️ FAS 2: Flask Weather Dashboard redo med WeatherEffects!")
+    print("=" * 70)
+    print("🌤️ FAS 2: Flask Weather Dashboard redo med intelligent Netatmo-hantering!")
     print("📱 Öppna: http://localhost:8036")
     print("🖥️ Chrome Kiosk: chromium-browser --kiosk --disable-infobars http://localhost:8036")
     
     # FAS 2: Visa systemläge
     mode = "SMHI + Netatmo" if weather_state['netatmo_available'] else "SMHI-only"
-    effects = " + WeatherEffects" if weather_state['weather_effects_enabled'] else ""
-    print(f"🎯 Systemläge: {mode}{effects}")
-    
-    # FAS 2: Visa WeatherEffects API endpoints
-    if weather_state['weather_effects_enabled']:
-        print(f"🌦️ WeatherEffects API: http://localhost:8036/api/weather-effects-config")
-        effect_config = weather_state['weather_effects_config']
-        rain_count = effect_config.get('rain_config', {}).get('droplet_count', 50)
-        snow_count = effect_config.get('snow_config', {}).get('flake_count', 25)
-        intensity = effect_config.get('intensity', 'auto')
-        print(f"   🌧️ Regn: {rain_count} droppar | ❄️ Snö: {snow_count} flingor | 🎚️ Intensitet: {intensity}")
-        
-        # Debug endpoint om aktiverat
-        if effect_config.get('debug_logging'):
-            print(f"🔧 WeatherEffects Debug: http://localhost:8036/api/weather-effects-debug")
-    else:
-        print(f"📊 WeatherEffects: INAKTIVERAT (weather_effects.enabled=False)")
-    
+    print(f"🎯 Systemläge: {mode}")
     print(f"📊 Trycktrend API: http://localhost:8036/api/pressure_trend")
     print(f"🌬️ Vindenheter: {config['ui']['wind_unit']} (redigerbart i reference/config.py)")
     print(f"🎨 Tema: {config['ui']['theme']} (mörkt tema rekommenderat)")
@@ -936,7 +618,7 @@ def initialize_app():
     print(f"💧 SMHI Luftfuktighet: AKTIVERAT (FAS 2 implementerat)")
     print(f"🌐 API med humidity: http://localhost:8036/api/weather")
     
-    print("=" * 80)
+    print("=" * 70)
     
     return True
 

@@ -1047,6 +1047,13 @@ async function initializeDashboard() {
         
         await updateAllData();
         hideLoadingOverlay();
+        
+        // WeatherEffects initialization
+        if (dashboardState.config?.weather_effects?.enabled) {
+            initializeWeatherEffects().catch(error => {
+                console.warn("WeatherEffects initialization failed:", error);
+            });
+        }
         console.log('✅ FAS 3: Graciös Dashboard med HUMIDITY FIX initialiserat!');
     } catch (error) {
         console.error('❌ Fel vid initialisering:', error);
@@ -1186,6 +1193,19 @@ function updateCurrentWeather(data) {
                 iconElement.appendChild(weatherIcon);
                 
                 console.log(`🎨 Main weather icon: ${iconName} for symbol ${smhi.weather_symbol}`);
+                
+                // WeatherEffects update
+                if (window.weatherEffectsManager) {
+                    try {
+                        weatherEffectsManager.updateFromSMHI(
+                            smhi.weather_symbol,
+                            smhi.precipitation || 0,
+                            smhi.wind_direction || 0
+                        );
+                    } catch (error) {
+                        console.warn("WeatherEffects update failed:", error);
+                    }
+                }
             }
             
             updateElement('smhi-description', getWeatherDescription(smhi.weather_symbol));
