@@ -5,6 +5,8 @@
  * OPTIMERAD FÖR: LP156WH4 (1366×768) + Pi5 + Chromium kiosk-läge
  * BASERAD PÅ: MagicMirror MMM-WeatherEffects modul
  * ARKITEKTUR: Modulär klass-baserad struktur med robust error handling
+ * 
+ * 🛠️ KRITISK FIX: clearEffects() metoden helt omskriven för att stoppa effekt-staplingar
  */
 
 // === SMHI WEATHER SYMBOL MAPPING ===
@@ -17,7 +19,7 @@ const SMHI_WEATHER_MAPPING = {
     sleet: [12, 13, 14, 22, 23, 24],
     // Åska (behandlas som intensivt regn)
     thunder: [11, 21],
-    // Klart väder (ingen effekt)
+    // Klart väder (ingen animation)
     clear: [1, 2, 3, 4, 5, 6, 7]
 };
 
@@ -60,11 +62,38 @@ class WeatherEffectsManager {
         this.effectContainer = null;
         this.initialized = false;
         
+        // 🛠️ FIX: Global timeout tracking för fullständig rensning
+        this.globalTimeouts = new Set();
+        this.globalIntervals = new Set();
+        
         // Bind methods för event handling
         this.updateFromSMHI = this.updateFromSMHI.bind(this);
         this.handleWeatherChange = this.handleWeatherChange.bind(this);
         
-        this.log('WeatherEffectsManager initialiserad');
+        this.log('WeatherEffectsManager initialiserad med förbättrad clearEffects()');
+    }
+    
+    /**
+     * 🛠️ FIX: Global timeout/interval tracking
+     */
+    addTimeout(timeoutId) {
+        this.globalTimeouts.add(timeoutId);
+        return timeoutId;
+    }
+    
+    addInterval(intervalId) {
+        this.globalIntervals.add(intervalId);
+        return intervalId;
+    }
+    
+    removeTimeout(timeoutId) {
+        this.globalTimeouts.delete(timeoutId);
+        clearTimeout(timeoutId);
+    }
+    
+    removeInterval(intervalId) {
+        this.globalIntervals.delete(intervalId);
+        clearInterval(intervalId);
     }
     
     /**
@@ -275,19 +304,19 @@ class WeatherEffectsManager {
             return;
         }
         
-        // Rensa befintliga effekter
+        // 🛠️ FIX: Använd förbättrad clearEffects
         this.clearEffects();
         
         // Skapa ny effekt baserat på vädertyp
         switch (weatherType) {
             case 'rain':
             case 'thunder':
-                this.currentEffect = new RainEffect(this.effectContainer, this.config.rain_config, intensity, windDirection);
+                this.currentEffect = new RainEffect(this.effectContainer, this.config.rain_config, intensity, windDirection, this);
                 break;
                 
             case 'snow':
             case 'sleet':
-                this.currentEffect = new SnowEffect(this.effectContainer, this.config.snow_config, intensity);
+                this.currentEffect = new SnowEffect(this.effectContainer, this.config.snow_config, intensity, this);
                 break;
                 
             case 'clear':
@@ -325,19 +354,109 @@ class WeatherEffectsManager {
     }
     
     /**
-     * Rensa alla aktiva effekter
+     * 🛠️ KRITISK FIX: Fullständigt omskriven clearEffects() metod
+     * Denna metod löser problemet med effekt-staplingar
      */
     clearEffects() {
+        this.log('🧹 Startar FÖRBÄTTRAD clearEffects() - stoppar allt...');
+        
+        // Steg 1: Stoppa pågående effekt om den finns
         if (this.currentEffect) {
-            this.currentEffect.stop();
+            this.log('🛑 Stoppar currentEffect...');
+            try {
+                this.currentEffect.stop();
+            } catch (error) {
+                this.logError('Fel vid stopp av currentEffect:', error);
+            }
             this.currentEffect = null;
         }
         
+        // Steg 2: Rensa alla globala timeouts och intervals
+        this.log(`🕐 Rensar ${this.globalTimeouts.size} timeouts och ${this.globalIntervals.size} intervals...`);
+        
+        this.globalTimeouts.forEach(timeoutId => {
+            try {
+                clearTimeout(timeoutId);
+            } catch (error) {
+                this.logError('Fel vid clearTimeout:', error);
+            }
+        });
+        this.globalTimeouts.clear();
+        
+        this.globalIntervals.forEach(intervalId => {
+            try {
+                clearInterval(intervalId);
+            } catch (error) {
+                this.logError('Fel vid clearInterval:', error);
+            }
+        });
+        this.globalIntervals.clear();
+        
+        // Steg 3: Aggressiv DOM-rensning med multiple selectors
         if (this.effectContainer) {
-            this.effectContainer.innerHTML = '';
+            const beforeCount = this.effectContainer.children.length;
+            
+            // Rensa alla weather-particle element
+            const particleSelectors = [
+                '.rain-particle',
+                '.snow-particle', 
+                '.weather-particle',
+                '[class*="particle"]',
+                '[class*="rain"]',
+                '[class*="snow"]'
+            ];
+            
+            particleSelectors.forEach(selector => {
+                const elements = this.effectContainer.querySelectorAll(selector);
+                elements.forEach(element => {
+                    try {
+                        // Stoppa alla animationer på elementet
+                        element.style.animation = 'none';
+                        element.style.transition = 'none';
+                        
+                        // Ta bort från DOM
+                        if (element.parentNode) {
+                            element.parentNode.removeChild(element);
+                        }
+                    } catch (error) {
+                        this.logError('Fel vid DOM-rensning:', error);
+                    }
+                });
+            });
+            
+            // Fallback: Rensa hela container-innehållet
+            try {
+                this.effectContainer.innerHTML = '';
+            } catch (error) {
+                this.logError('Fel vid innerHTML clear:', error);
+            }
+            
+            const afterCount = this.effectContainer.children.length;
+            this.log(`🧹 DOM rensad: ${beforeCount} → ${afterCount} element`);
         }
         
+        // Steg 4: Dölj effect container
         this.hideEffectContainer();
+        
+        // Steg 5: Verification med timeout
+        this.addTimeout(setTimeout(() => {
+            const remainingParticles = document.querySelectorAll('.rain-particle, .snow-particle, .weather-particle');
+            if (remainingParticles.length > 0) {
+                this.logError(`⚠️ ${remainingParticles.length} partiklar kvarstår efter clearEffects!`);
+                // Aggressiv sista rensning
+                remainingParticles.forEach(particle => {
+                    try {
+                        particle.remove();
+                    } catch (error) {
+                        // Ignorera fel här - element kan redan vara borttaget
+                    }
+                });
+            } else {
+                this.log('✅ clearEffects() verifierat - alla partiklar borttagna');
+            }
+        }, 500));
+        
+        this.log('🧹 clearEffects() KOMPLETT');
     }
     
     /**
@@ -372,15 +491,17 @@ class WeatherEffectsManager {
     }
 }
 
-// === REGNEFFEKT-KLASS ===
+// === REGNEFFEKT-KLASS (FÖRBÄTTRAD) ===
 class RainEffect {
-    constructor(container, config, intensity, windDirection) {
+    constructor(container, config, intensity, windDirection, manager) {
         this.container = container;
         this.config = config;
         this.intensity = intensity;
         this.windDirection = windDirection;
+        this.manager = manager; // 🛠️ FIX: Referens till manager för timeout tracking
         this.particles = [];
         this.animationId = null;
+        this.isActive = false; // 🛠️ FIX: Flag för att stoppa nya partiklar
         
         // LP156WH4 optimerade värden
         this.intensityMultipliers = {
@@ -391,22 +512,36 @@ class RainEffect {
     }
     
     start() {
+        this.isActive = true;
         this.createRainParticles();
     }
     
     stop() {
+        this.manager.log('🛑 RainEffect.stop() kallas...');
+        this.isActive = false; // 🛠️ FIX: Stoppa nya partiklar
+        
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
             this.animationId = null;
         }
         
-        this.particles.forEach(particle => {
-            if (particle.element && particle.element.parentNode) {
-                particle.element.parentNode.removeChild(particle.element);
+        // 🛠️ FIX: Rensa alla partiklar med robust error handling
+        this.particles.forEach((particle, index) => {
+            try {
+                if (particle.element && particle.element.parentNode) {
+                    particle.element.style.animation = 'none'; // Stoppa animationer
+                    particle.element.parentNode.removeChild(particle.element);
+                }
+                if (particle.timeoutId) {
+                    clearTimeout(particle.timeoutId);
+                }
+            } catch (error) {
+                this.manager.logError(`Fel vid rensning av rain particle ${index}:`, error);
             }
         });
         
         this.particles = [];
+        this.manager.log('🛑 RainEffect stoppat, alla partiklar rensade');
     }
     
     updateIntensity(newIntensity) {
@@ -418,15 +553,20 @@ class RainEffect {
     }
     
     createRainParticles() {
+        if (!this.isActive) return; // 🛠️ FIX: Kontrollera om fortfarande aktiv
+        
         const multiplier = this.intensityMultipliers[this.intensity] || 1.0;
         const dropletCount = Math.floor(this.config.droplet_count * multiplier);
         
         for (let i = 0; i < dropletCount; i++) {
+            if (!this.isActive) break; // 🛠️ FIX: Avbryt om stoppat under loop
             this.createRainDroplet();
         }
     }
     
     createRainDroplet() {
+        if (!this.isActive || !this.container) return; // 🛠️ FIX: Safety check
+        
         const droplet = document.createElement('div');
         droplet.className = 'rain-particle';
         
@@ -458,14 +598,11 @@ class RainEffect {
         
         this.container.appendChild(droplet);
         
-        // Spara referens
-        this.particles.push({
-            element: droplet,
-            duration: duration
-        });
-        
-        // Auto-remove efter animation
-        setTimeout(() => {
+        // 🛠️ FIX: Robust timeout-hantering med manager tracking
+        const timeoutId = this.manager.addTimeout(setTimeout(() => {
+            if (!this.isActive) return; // 🛠️ FIX: Kontrollera status
+            
+            // Ta bort droplet
             if (droplet.parentNode) {
                 droplet.parentNode.removeChild(droplet);
             }
@@ -476,11 +613,21 @@ class RainEffect {
                 this.particles.splice(index, 1);
             }
             
-            // Skapa ny droplet för kontinuerlig effekt
-            if (this.container) {
+            // Rensa timeout från manager
+            this.manager.removeTimeout(timeoutId);
+            
+            // Skapa ny droplet för kontinuerlig effekt ENDAST om fortfarande aktiv
+            if (this.isActive && this.container) {
                 this.createRainDroplet();
             }
-        }, duration + 2000);
+        }, duration + 2000));
+        
+        // Spara referens MED timeout ID
+        this.particles.push({
+            element: droplet,
+            duration: duration,
+            timeoutId: timeoutId // 🛠️ FIX: Spara timeout ID för rensning
+        });
     }
     
     getWindOffset() {
@@ -495,13 +642,15 @@ class RainEffect {
     }
 }
 
-// === SNÖEFFEKT-KLASS ===
+// === SNÖEFFEKT-KLASS (FÖRBÄTTRAD) ===
 class SnowEffect {
-    constructor(container, config, intensity) {
+    constructor(container, config, intensity, manager) {
         this.container = container;
         this.config = config;
         this.intensity = intensity;
+        this.manager = manager; // 🛠️ FIX: Referens till manager
         this.particles = [];
+        this.isActive = false; // 🛠️ FIX: Aktivitetsflag
         
         // LP156WH4 optimerade värden
         this.intensityMultipliers = {
@@ -512,17 +661,31 @@ class SnowEffect {
     }
     
     start() {
+        this.isActive = true;
         this.createSnowParticles();
     }
     
     stop() {
-        this.particles.forEach(particle => {
-            if (particle.element && particle.element.parentNode) {
-                particle.element.parentNode.removeChild(particle.element);
+        this.manager.log('🛑 SnowEffect.stop() kallas...');
+        this.isActive = false; // 🛠️ FIX: Stoppa nya partiklar
+        
+        // 🛠️ FIX: Robust particle-rensning
+        this.particles.forEach((particle, index) => {
+            try {
+                if (particle.element && particle.element.parentNode) {
+                    particle.element.style.animation = 'none'; // Stoppa animationer
+                    particle.element.parentNode.removeChild(particle.element);
+                }
+                if (particle.timeoutId) {
+                    clearTimeout(particle.timeoutId);
+                }
+            } catch (error) {
+                this.manager.logError(`Fel vid rensning av snow particle ${index}:`, error);
             }
         });
         
         this.particles = [];
+        this.manager.log('🛑 SnowEffect stoppat, alla partiklar rensade');
     }
     
     updateIntensity(newIntensity) {
@@ -534,15 +697,20 @@ class SnowEffect {
     }
     
     createSnowParticles() {
+        if (!this.isActive) return; // 🛠️ FIX: Safety check
+        
         const multiplier = this.intensityMultipliers[this.intensity] || 1.0;
         const flakeCount = Math.floor(this.config.flake_count * multiplier);
         
         for (let i = 0; i < flakeCount; i++) {
+            if (!this.isActive) break; // 🛠️ FIX: Avbryt om stoppat
             this.createSnowFlake();
         }
     }
     
     createSnowFlake() {
+        if (!this.isActive || !this.container) return; // 🛠️ FIX: Safety check
+        
         const flake = document.createElement('div');
         flake.className = 'snow-particle';
         
@@ -577,14 +745,11 @@ class SnowEffect {
         
         this.container.appendChild(flake);
         
-        // Spara referens
-        this.particles.push({
-            element: flake,
-            duration: duration
-        });
-        
-        // Auto-remove efter animation
-        setTimeout(() => {
+        // 🛠️ FIX: Robust timeout med manager tracking
+        const timeoutId = this.manager.addTimeout(setTimeout(() => {
+            if (!this.isActive) return; // 🛠️ FIX: Kontrollera status
+            
+            // Ta bort flake
             if (flake.parentNode) {
                 flake.parentNode.removeChild(flake);
             }
@@ -595,11 +760,21 @@ class SnowEffect {
                 this.particles.splice(index, 1);
             }
             
-            // Skapa ny flake för kontinuerlig effekt
-            if (this.container) {
+            // Rensa timeout från manager
+            this.manager.removeTimeout(timeoutId);
+            
+            // Skapa ny flake ENDAST om fortfarande aktiv
+            if (this.isActive && this.container) {
                 this.createSnowFlake();
             }
-        }, duration + 3000);
+        }, duration + 3000));
+        
+        // Spara referens MED timeout ID
+        this.particles.push({
+            element: flake,
+            duration: duration,
+            timeoutId: timeoutId // 🛠️ FIX: Spara timeout ID
+        });
     }
 }
 
@@ -615,7 +790,7 @@ let weatherEffectsManager = null;
  */
 async function initializeWeatherEffects() {
     try {
-        console.log('[WeatherEffects] Initialiserar...');
+        console.log('[WeatherEffects] Initialiserar med FÖRBÄTTRAD clearEffects()...');
         
         if (weatherEffectsManager) {
             weatherEffectsManager.destroy();
@@ -627,7 +802,7 @@ async function initializeWeatherEffects() {
         if (success) {
             // Exponera till global scope för dashboard.js
             window.weatherEffectsManager = weatherEffectsManager;
-            console.log('[WeatherEffects] Initialisering lyckades');
+            console.log('[WeatherEffects] ✅ Initialisering lyckades med fixad clearEffects()');
             return true;
         } else {
             console.warn('[WeatherEffects] Initialisering misslyckades');
@@ -651,4 +826,4 @@ if (typeof module !== 'undefined' && module.exports) {
     };
 }
 
-console.log('[WeatherEffects] JavaScript-modul laddad');
+console.log('[WeatherEffects] 🛠️ FIXAD JavaScript-modul laddad - clearEffects() problemet LÖST!');
