@@ -2,13 +2,37 @@
 
 **GitHub Repository:** [https://github.com/cgillinger/vaderdisplay](https://github.com/cgillinger/vaderdisplay)
 
-En modern, responsiv väder-dashboard som fungerar på alla skärmstorlekar och enheter. Visar väderprognos från SMHI med valfri integration av Netatmo väderstation för faktiska mätningar.
+En modern, responsiv väder-dashboard som fungerar på alla skärmstorlekar och enheter. Visar väderprognos från SMHI med valfri integration av Netatmo väderstation för faktiska mätningar. **Nytt: Weather Effects med animerade regn- och snöeffekter!**
 
 ![Dashboard Preview](screenshots/screenshot2.png)
 
-## ⚡ Snabbstart (5 minuter)
+## 🎯 Vad behöver jag?
 
-**För Linux/Ubuntu/Raspberry Pi:**
+### 📊 Scenario 1: Server + Surfplatta/Telefon (REKOMMENDERAT)
+
+**🖥️ Server (kör dashboarden):**
+- Raspberry Pi, Linux-dator eller Synology NAS
+- Python 3.8+ och internetanslutning
+- **Inga skärm eller webbläsare behövs**
+
+**📱 Klient (visar dashboarden):**
+- iPad, Android-platta, telefon eller dator
+- Modern webbläsare (Safari, Chrome, Firefox)
+- WiFi-anslutning till samma nätverk
+
+### 🖥️ Scenario 2: Allt-i-ett (Pi + skärm)
+
+**📺 Dedikerad display:**
+- Raspberry Pi 3B eller bättre
+- 15.6" skärm (LP156WH4 eller liknande)
+- Chromium för kioskläge
+- Tangentbord/mus för konfiguration
+
+## ⚡ Snabbstart
+
+### 🖥️ Server-installation (5 minuter)
+
+**Linux/Ubuntu/Raspberry Pi:**
 ```bash
 sudo apt update && sudo apt install python3 python3-pip git -y
 cd ~ && git clone https://github.com/cgillinger/vaderdisplay.git && cd vaderdisplay
@@ -16,33 +40,33 @@ pip3 install flask requests
 cp reference/config_example.py reference/config.py
 python3 app.py
 ```
-*Ladda ner, installera och starta på 4 rader. Öppna sedan http://localhost:8036*
 
-**För Synology NAS:**
+**Synology NAS:**
 ```bash
 python3 -m pip install --user flask requests
 cd ~ && git clone https://github.com/cgillinger/vaderdisplay.git && cd vaderdisplay
 cp reference/config_example.py reference/config.py && python3 app.py
 ```
-*Installera och starta på Synology. Öppna sedan http://SYNOLOGY-IP:8036*
+
+**📱 Öppna sedan:** `http://SERVER-IP:8036` på din surfplatta/telefon
 
 ## 📋 Innehållsförteckning
 
 - [Översikt](#-översikt)
 - [Funktioner](#-funktioner)
-- [Systemkrav](#-systemkrav)
-- [Installation på Linux](#-installation-på-linux)
-- [Installation på Synology NAS](#-installation-på-synology-nas)
+- [Vad behöver jag?](#-vad-behöver-jag)
+- [Server-installation](#-server-installation)
+- [Klient-setup](#-klient-setup)
 - [Konfiguration](#-konfiguration)
+- [Weather Effects](#-weather-effects)
 - [Användning](#-användning)
-- [iPad Webbapp-genväg](#-ipad-webbapp-genväg)
 - [Anpassningar](#-anpassningar)
 - [Felsökning](#-felsökning)
 - [Support](#-support)
 
 ## 🎯 Översikt
 
-Flask Weather Dashboard är en elegant väder-dashboard som kombinerar SMHI:s väderprognos med valfri integration av Netatmo väderstation. Systemet är optimerat för Raspberry Pi 3B och LP156WH4(TL)(P1) 15.6" LED LCD-paneler, men **fungerar utmärkt på alla skärmstorlekar** - från smartphones och surfplattor till stora skärmar. **Särskilt väl anpassad för iPad** med responsiv design som automatiskt justerar layout och storlekar.
+Flask Weather Dashboard är en elegant väder-dashboard som kombinerar SMHI:s väderprognos med valfri integration av Netatmo väderstation. Systemet fungerar i **server/klient-arkitektur** - servern kan köras på vilken Linux-enhet som helst (Raspberry Pi, Synology NAS, Ubuntu-dator) medan dashboarden visas på surfplattor, telefoner eller dedikerade skärmar.
 
 ### 🌟 Två driftlägen:
 
@@ -71,10 +95,19 @@ Flask Weather Dashboard är en elegant väder-dashboard som kombinerar SMHI:s v�
 
 ### 🎨 Visuella funktioner
 - **Cirkulär klocka**: 60 LED-prickar som visar sekunder
-- **Responsiv design**: Optimerad för 1366×768 LP156WH4-skärmar
+- **Responsiv design**: Optimerad för alla skärmstorlekar
 - **Teman**: Mörkt (produktionsklart) och ljust tema
 - **Weather Icons**: Professionella väderikoner med dag/natt-varianter
 - **Glassmorphism**: Modern glaseffektsdesign
+
+### 🌦️ Weather Effects 
+- **🌧️ Regn-animationer**: Realistiska regndroppar med vindpåverkan
+- **❄️ Snö-effekter**: Fallande snöflingor med sparkle-effekter
+- **⚡ SMHI-integration**: Automatiska effekter baserat på vädersymboler (1-27)
+- **🎛️ Konfigurerbar intensitet**: Light, medium, heavy eller auto-detektering
+- **🖥️ LP156WH4-optimerad**: 60fps animationer optimerade för specifik skärm
+- **🚀 GPU-acceleration**: Pi5-optimerad för smooth prestanda
+- **🎚️ Anpassningsbar**: Konfigurerbart antal partiklar och hastigheter
 
 ### 🌅 Extra funktioner
 - **Sol-tider**: Soluppgång/solnedgång med API eller fallback-beräkning
@@ -82,217 +115,264 @@ Flask Weather Dashboard är en elegant väder-dashboard som kombinerar SMHI:s v�
 - **Ljudnivå**: Decibel-mätning (backend-stöd finns, frontend ej aktiverat)
 - **Auto-uppdatering**: Konfigurerbara uppdateringsintervall
 
-## 💻 Systemkrav
+## 🖥️ Server-installation
 
-### Minsta krav:
+Servern kör Flask-applikationen och hanterar all väderdata. **Ingen skärm eller webbläsare behövs på servern.**
+
+### 💻 Systemkrav för server
+
 - **Linux-distribution** (Ubuntu, Debian, Raspberry Pi OS, Synology DSM)
 - **Python 3.8+**
-- **Flask** (installeras automatiskt)
+- **2GB+ RAM** (rekommenderat)
+- **1GB lagringsutrymme**
 - **Internetuppkoppling** för SMHI API
 
-### Rekommenderat:
-- **Raspberry Pi 3B eller bättre**
-- **15.6" skärm med 1366×768 upplösning** (LP156WH4 eller liknande)
-- **Chromium/Chrome** för kioskläge
-- **4GB+ lagringsutrymme**
+### 🐧 Linux Server (Ubuntu/Debian/Pi OS)
 
-### Valfritt:
-- **Netatmo väderstation** (för faktiska mätningar)
-- **ipgeolocation.io API-nyckel** (för exakta sol-tider)
+#### Steg 1: Förbered systemet
 
-## 📦 Beroenden och installation
-
-### Systempaket (installeras automatiskt)
-
-**Kommandopaket: Alla systempaket på en gång**
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3 python3-pip git curl nano wget unzip chromium-browser -y
-```
-*Installerar Python 3, pakethanterare (pip), Git (versionskontroll), curl/wget (nedladdningsverktyg), nano (textredigerare) och Chromium (för kiosk-läge).*
-
-### Python-moduler (obligatoriska)
-
-**Flask** - Webbramverk för dashboard-servern
-```bash
-pip3 install flask
-```
-
-**Requests** - HTTP-bibliotek för API-anrop till SMHI och Netatmo
-```bash
-pip3 install requests
-```
-
-**Kommandopaket: Alla Python-beroenden**
-```bash
-pip3 install flask requests
-python3 -c "import flask, requests, json, os, sys, threading, time; print('✅ Alla Python-moduler installerade')"
-```
-*Installerar och verifierar alla nödvändiga Python-moduler (Flask, requests) plus kontrollerar inbyggda moduler.*
-
-### Systemkontroll av beroenden
-
-**Komplett beroendevalidering:**
-```bash
-echo "=== Beroendevalidering ==="
-python3 --version | grep -E "3\.[8-9]|3\.1[0-9]" && echo "✅ Python OK" || echo "❌ Python för gammal (kräver 3.8+)"
-python3 -c "import flask; print('✅ Flask:', flask.__version__)" 2>/dev/null || echo "❌ Flask saknas"
-python3 -c "import requests; print('✅ Requests:', requests.__version__)" 2>/dev/null || echo "❌ Requests saknas"
-which git > /dev/null && echo "✅ Git installerat" || echo "❌ Git saknas"
-which curl > /dev/null && echo "✅ Curl installerat" || echo "❌ Curl saknas"
-which nano > /dev/null && echo "✅ Nano installerat" || echo "❌ Nano saknas"
-which chromium-browser > /dev/null && echo "✅ Chromium installerat" || echo "⚠️ Chromium saknas (endast för kiosk-läge)"
-```
-*Kontrollerar alla kritiska beroenden och visar tydliga OK/PROBLEM-meddelanden.*
-
-## 🖥️ Installation på Linux
-
-### Steg 1: Förbered systemet
-
-**Kommandopaket 1: Systemuppdatering och grundläggande verktyg**
 ```bash
 sudo apt update && sudo apt upgrade -y
 sudo apt install python3 python3-pip git curl nano -y
 ```
-*Detta uppdaterar paketlistor, uppgraderar systemet och installerar Python 3, pip (pakethanterare), Git (versionskontroll), curl (för API-test) och nano (textredigerare).*
+*Uppdaterar systemet och installerar grundläggande verktyg. **OBS:** Ingen Chromium behövs på servern.*
 
-**Verifiera installation:**
-```bash
-python3 --version
-pip3 --version
-git --version
-```
-*Kontrollerar att Python 3.8+ och alla verktyg är korrekt installerade.*
+#### Steg 2: Ladda ner och installera
 
-### Steg 2: Ladda ner projektet
-
-**Navigera och ladda ner:**
 ```bash
 cd ~
 git clone https://github.com/cgillinger/vaderdisplay.git
 cd vaderdisplay
-```
-*Går till hemkatalogen, laddar ner väder-dashboarden från GitHub och navigerar in i projektkatalogen.*
-
-### Steg 3: Installera Python-beroenden
-
-**Kommandopaket 2: Flask och Python-moduler**
-```bash
 pip3 install flask requests
-python3 -c "import flask, requests; print('✅ Alla Python-beroenden installerade')"
 ```
-*Installerar Flask (webbramverk) och requests (för API-anrop), sedan verifierar att allt fungerar.*
+*Laddar ner dashboarden och installerar Python-beroenden.*
 
-### Steg 4: Konfigurera dashboarden
+#### Steg 3: Konfigurera
 
-**Kopiera och redigera konfiguration:**
 ```bash
 cp reference/config_example.py reference/config.py
 nano reference/config.py
 ```
-*Kopierar exempel-konfigurationen till aktiv fil och öppnar den för redigering (se Konfiguration-sektionen för detaljer).*
+*Skapar konfigurationsfil. Se [Konfiguration](#-konfiguration) för detaljer.*
 
-### Steg 5: Testa installationen
+#### Steg 4: Testa och starta
 
-**Starta Flask-servern:**
 ```bash
 python3 app.py
 ```
-*Startar väder-dashboarden på port 8036. Om allt fungerar ser du välkomstmeddelandet.*
+*Startar servern på port 8036. Servern är nu redo för klienter.*
 
-### Steg 6: Öppna i webbläsare
+#### Steg 5: Autostart (valfritt)
 
-Öppna webbläsaren och gå till: `http://localhost:8036`
-
-### Steg 7: Konfigurera autostart (valfritt)
-
-**För automatisk start vid systemstart:**
 ```bash
-echo "cd ~/vaderdisplay && python3 app.py &" >> ~/.bashrc
-echo "sleep 5 && chromium-browser --kiosk --disable-infobars http://localhost:8036" >> ~/.bashrc
+# Skapa systemd-service för autostart
+sudo tee /etc/systemd/system/weather-dashboard.service > /dev/null <<EOF
+[Unit]
+Description=Weather Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$HOME/vaderdisplay
+ExecStart=/usr/bin/python3 app.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl enable weather-dashboard
+sudo systemctl start weather-dashboard
 ```
-*Lägger till automatisk start av dashboarden och kioskläge i Chromium när systemet startar.*
+*Konfigurerar automatisk start vid systemstart.*
 
-## 🏢 Installation på Synology NAS
+### 🏢 Synology NAS Server
 
-### Steg 1: Aktivera SSH och Python
+#### Steg 1: Förbered Synology
 
-1. **Öppna DSM** (Synology webbgränssnitt)
-2. **Paketcenter** → Installera **Python 3**
-3. **Kontrollpanel** → **Terminal & SNMP** → Aktivera **SSH-tjänst**
+1. **DSM** → **Paketcenter** → Installera **Python 3**
+2. **Kontrollpanel** → **Terminal & SNMP** → Aktivera **SSH-tjänst**
+3. **Anslut via SSH:** `ssh admin@SYNOLOGY-IP`
 
-### Steg 2: Anslut via SSH
+#### Steg 2: Installera server
 
-**Från din dator:**
-```bash
-ssh admin@192.168.1.100
-```
-*Ersätt `192.168.1.100` med din NAS:s IP-adress och `admin` med ditt användarnamn. Använd ditt lösenord.*
-
-### Steg 3: Installera Python-beroenden
-
-**Kommandopaket 1: Python-moduler för Synology**
 ```bash
 python3 -m pip install --user flask requests
-python3 -c "import flask, requests; print('✅ Python-beroenden installerade på Synology')"
+cd ~
+git clone https://github.com/cgillinger/vaderdisplay.git
+cd vaderdisplay
+cp reference/config_example.py reference/config.py
+nano reference/config.py
 ```
-*Installerar Flask och requests med --user för Synology-kompatibilitet och verifierar installationen.*
+*Installerar Python-moduler och sätter upp projektet. **OBS:** Ingen Chromium behövs på Synology.*
 
-### Steg 4: Ladda upp projektet
+#### Steg 3: Testa server
 
-**Alternativ A: Via SSH/Git**
+```bash
+python3 app.py
+```
+*Startar servern. Testa genom att öppna `http://SYNOLOGY-IP:8036` på annan enhet.*
+
+#### Steg 4: Autostart via DSM
+
+1. **DSM** → **Kontrollpanel** → **Uppgiftsschema**
+2. **Skapa** → **Användardefinierad script**
+3. **Användare**: Ditt användarnamn
+4. **Script:** 
+   ```bash
+   cd ~/vaderdisplay && python3 app.py
+   ```
+5. **Schema**: **När systemet startar**
+
+### ✅ Server-installation klar
+
+**Servern körs nu på:** `http://SERVER-IP:8036`
+
+**Nästa steg:** [Klient-setup](#-klient-setup) för att visa dashboarden på surfplattor/skärmar.
+
+## 📱 Klient-setup
+
+Klienter visar dashboarden från servern. Fungerar på alla enheter med modern webbläsare.
+
+### 📊 Klient-systemkrav
+
+- **Modern webbläsare** (Safari, Chrome, Firefox, Edge)
+- **WiFi-anslutning** till samma nätverk som servern
+- **Minst 1024×768 upplösning** (fungerar på alla storlekar)
+
+### 📱 iPad Webbapp-installation
+
+**Perfekt för väggmonterad surfplatta eller köksvy!**
+
+![iPad Setup](screenshots/screenshot2.png)
+
+#### Steg för iPad:
+
+1. **🌐 Öppna Safari** på iPad
+2. **📍 Navigera** till `http://SERVER-IP:8036` (ersätt med din servers IP)
+3. **📤 Tryck på delningsknappen** (kvadrat med uppåtpil)
+4. **➕ Välj "Lägg till på hemskärmen"**
+5. **✏️ Ändra namnet** till "Väder Dashboard"
+6. **✅ Tryck "Lägg till"**
+
+#### iPad-tips:
+- **🔄 Landscape-orientering** rekommenderas för bästa upplevelse
+- **🔒 Inaktivera Auto-Lock:** Inställningar → Skärm och ljusstyrka → Auto-Lock → Aldrig
+- **🎯 Guided Access:** För kioskfunktionalitet (Inställningar → Tillgänglighet → Guided Access)
+- **⚡ Weather Effects** fungerar smidigt på iPad Pro och nyare modeller
+
+### 🤖 Android-platta Webbapp-installation
+
+**Fungerar utmärkt på Samsung Galaxy Tab, Huawei, Lenovo och andra Android-plattor!**
+
+#### Steg för Android (Chrome):
+
+1. **🌐 Öppna Chrome** på Android-plattan
+2. **📍 Navigera** till `http://SERVER-IP:8036`
+3. **⋮ Tryck på menyn** (tre prickar, överst till höger)
+4. **➕ Välj "Lägg till på startskärmen"** eller **"Installera app"**
+5. **✏️ Ändra namnet** till "Väder Dashboard"
+6. **✅ Tryck "Lägg till"**
+
+#### Steg för Android (Samsung Internet):
+
+1. **🌐 Öppna Samsung Internet**
+2. **📍 Navigera** till `http://SERVER-IP:8036`
+3. **≡ Tryck på menyn** (tre linjer)
+4. **➕ Välj "Lägg till på startskärmen"**
+5. **✅ Bekräfta installation**
+
+#### Android-tips:
+- **🔋 Inaktivera strömsparläge** för plattan när dashboarden körs
+- **🌙 Nattläge:** Aktivera "Behåll skärmen på" under utvecklarinställningar
+- **🎮 Kioskläge:** Använd appar som "Kiosk Browser Lockdown" för offentliga installationer
+- **📱 Olika storlekar:** Fungerar på 7"-13" plattor, layout anpassas automatiskt
+
+#### Rekommenderade Android-plattor:
+- **Samsung Galaxy Tab A/S-serien** (bra prestanda för Weather Effects)
+- **Lenovo Tab M-serien** (budget-vänlig, fungerar bra)
+- **Huawei MatePad** (snabb, smooth animationer)
+- **Amazon Fire HD** (budget-alternativ, fungerar med Chrome installerat)
+
+### 🖥️ Dedikerad display-installation (Pi + skärm)
+
+**För permanenta väggmonterade displayer eller informationstavlor.**
+
+#### Display-systemkrav:
+
+- **Raspberry Pi 3B eller bättre** (Pi5 rekommenderat för Weather Effects)
+- **15.6" skärm** (LP156WH4 optimerat, men fungerar med alla storlekar)
+- **Chromium webbläsare** för kioskläge
+- **4GB+ SD-kort**
+
+#### Steg 1: Förbered Pi för display
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install python3 python3-pip git curl nano chromium-browser xorg -y
+```
+*Installerar både server-komponenter OCH Chromium för display.*
+
+#### Steg 2: Installera dashboard-server
+
 ```bash
 cd ~
 git clone https://github.com/cgillinger/vaderdisplay.git
 cd vaderdisplay
-```
-*Navigerar till hemkatalogen och laddar ner väder-dashboarden via Git.*
-
-**Alternativ B: Via File Station (GUI)**
-1. Öppna **File Station** i DSM
-2. Navigera till din **hemkatalog** (vanligtvis `/homes/ditt-användarnamn/`)
-3. Ladda upp `vaderdisplay.zip` och packa upp
-
-### Steg 5: Konfigurera
-
-**Kopiera och redigera konfiguration:**
-```bash
+pip3 install flask requests
 cp reference/config_example.py reference/config.py
 nano reference/config.py
 ```
-*Skapar konfigurationsfil och öppnar för redigering.*
+*Pi:n kör både server och klient lokalt.*
 
-### Steg 6: Testa manuell start
+#### Steg 3: Konfigurera kioskläge
 
-**Använd det medföljande startscriptet:**
+**Standard kioskläge:**
 ```bash
-cp synology_start_script.sh start_weather.sh
-nano start_weather.sh  # Anpassa USERNAME och andra variabler
-chmod +x start_weather.sh
-./start_weather.sh
+chromium-browser --kiosk --disable-infobars http://localhost:8036
 ```
-*Kopierar exempel-startscriptet, anpassar för ditt system och testar att dashboarden startar korrekt.*
 
-### Steg 7: Konfigurera automatisk start
-
-1. **DSM** → **Kontrollpanel** → **Uppgiftsschema**
-2. **Skapa** → **Användardefinierad script**
-3. **Användare**: Välj ditt användarnamn
-4. **Användardefinierat script:**
-   ```bash
-   cd ~/vaderdisplay
-   ./start_weather.sh
-   ```
-5. **Schema**: **När systemet startas**
-6. **Aktivera uppgift**
-
-### Steg 8: Öppna dashboard
-
-**Från webbläsare:**
+**Pi5 med Weather Effects (optimerat):**
+```bash
+chromium-browser --kiosk --disable-infobars --enable-gpu-rasterization --enable-zero-copy --disable-web-security http://localhost:8036
 ```
-http://192.168.1.100:8036
+
+**Pi3B (prestanda-optimerat):**
+```bash
+chromium-browser --kiosk --disable-infobars --memory-pressure-off --disable-dev-shm-usage http://localhost:8036
 ```
-*Ersätt IP-adressen med din NAS:s faktiska IP-adress.*
+
+#### Steg 4: Autostart för display
+
+```bash
+# Skapa autostart-script
+mkdir -p ~/.config/autostart
+cat > ~/.config/autostart/weather-dashboard.desktop << 'EOF'
+[Desktop Entry]
+Type=Application
+Name=Weather Dashboard
+Exec=/bin/bash -c 'cd ~/vaderdisplay && python3 app.py & sleep 10 && chromium-browser --kiosk --disable-infobars http://localhost:8036'
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+EOF
+```
+*Startar både server och kiosk-display automatiskt.*
+
+### 🔌 Hitta server-IP
+
+**På server (Linux/Synology):**
+```bash
+ip addr show | grep 'inet 192' | awk '{print $2}' | cut -d'/' -f1
+```
+*Visar serverns IP-adress, t.ex. 192.168.1.100*
+
+**På Windows-klient:**
+```cmd
+ping SERVERNAME.local
+```
+*Hitta server via namn, t.ex. raspberrypi.local*
 
 ## ⚙️ Konfiguration
 
@@ -382,11 +462,174 @@ CONFIG = {
 
 **Utan API-nyckel** används förenklad solberäkning (fungerar bra för Sverige).
 
+## 🌦️ Weather Effects
+
+### ✨ Funktioner
+
+Weather Effects tillhandahåller **realistiska väderanimationer** som automatiskt aktiveras baserat på SMHI:s väderdata:
+
+- **🌧️ Regn-effekter**: Animerade regndroppar med vindpåverkan
+- **❄️ Snö-effekter**: Fallande snöflingor med sparkle-animationer  
+- **⚡ SMHI-integration**: Automatisk aktivering baserat på vädersymboler (1-27)
+- **🎛️ Intensitet**: Konfigurerbar eller auto-detektering från nederbörd
+- **🖥️ LP156WH4-optimerad**: Specifikt optimerad för 1366×768 LED LCD-paneler
+- **🚀 Prestanda**: 60fps GPU-accelererade animationer för Pi5
+
+### ⚙️ Konfiguration
+
+Lägg till i `reference/config.py`:
+
+```python
+CONFIG = {
+    # ... övrig konfiguration ...
+    
+    # Weather Effects-konfiguration
+    'weather_effects': {
+        'enabled': True,  # True/False - Aktivera vädereffekter
+        'intensity': 'auto',  # 'auto', 'light', 'medium', 'heavy'
+        
+        # Regn-inställningar
+        'rain_config': {
+            'droplet_count': 50,           # Antal regndroppar (10-100)
+            'droplet_speed': 2.0,          # Fallhastighet (0.5-5.0)
+            'wind_direction': 'none',      # 'none', 'left-to-right', 'right-to-left'
+            'enable_splashes': False       # Vattenplask-effekter (experimentellt)
+        },
+        
+        # Snö-inställningar  
+        'snow_config': {
+            'flake_count': 25,             # Antal snöflingor (10-50)
+            'characters': ['*', '+'],      # Snöflingor-tecken
+            'sparkle_enabled': False,      # Glitter-effekt på snöflingor
+            'min_size': 0.8,              # Minsta storlek (0.5-2.0)
+            'max_size': 1.5,              # Största storlek (1.0-3.0)
+            'speed': 1.0                   # Fallhastighet (0.5-2.0)
+        },
+        
+        # Tekniska inställningar
+        'transition_duration': 1000,      # Övergångstid i ms (500-3000)
+        'debug_logging': False,           # Detaljerad logging
+        'fallback_enabled': True,         # Graceful fallbacks vid fel
+        
+        # LP156WH4-specifika optimeringar
+        'lp156wh4_optimizations': {
+            'enabled': True,               # Aktivera skärm-optimeringar
+            'contrast_boost': 1.1,         # Kontrastförstärkning för LED LCD
+            'brightness_boost': 1.1,       # Ljusstyrkeboost för bättre synlighet
+            'gpu_acceleration': True,      # GPU-acceleration (Pi5)
+            'target_fps': 60              # Mål-framerate
+        }
+    }
+}
+```
+
+### 🎛️ Intensitetsnivåer
+
+| Intensitet | Beskrivning | Användning |
+|------------|-------------|------------|
+| `'auto'` | **Rekommenderat** - Bestäms automatiskt från SMHI nederbörd | Mest realistisk |
+| `'light'` | Lätta effekter med färre partiklar | Prestanda-sparläge |
+| `'medium'` | Standard-intensitet | Balanserat läge |
+| `'heavy'` | Intensiva effekter med många partiklar | Dramatisk effekt |
+
+### 🌡️ SMHI Vädersymbol-mappning
+
+Weather Effects aktiveras automatiskt baserat på SMHI:s vädersymboler:
+
+| SMHI Symboler | Effekt | Beskrivning |
+|---------------|--------|-------------|
+| 1-7 | **Inget** | Klart väder, inga effekter |
+| 8-10, 18-20 | **🌧️ Regn** | Regnskurar och regn |
+| 11, 21 | **⚡ Åska** | Behandlas som intensivt regn |
+| 12-14, 22-24 | **🌨️ Snöblandat** | Snö-effekter med regn-hastighet |
+| 15-17, 25-27 | **❄️ Snö** | Snöbyar och snöfall |
+
+### 🚀 Prestanda-optimering för olika enheter
+
+**📱 Mobila enheter (iPad/Android):**
+```python
+'weather_effects': {
+    'enabled': True,
+    'rain_config': {'droplet_count': 35},   # Lagom för mobil
+    'snow_config': {'flake_count': 20},     # Lagom för mobil
+    'lp156wh4_optimizations': {
+        'gpu_acceleration': True,            # Mobiler har GPU
+        'target_fps': 45                     # Lite lägre för batterilivslängd
+    }
+}
+```
+
+**🖥️ Raspberry Pi 3B:**
+```python
+'weather_effects': {
+    'enabled': True,
+    'rain_config': {'droplet_count': 30},   # Reducerat för Pi3B
+    'snow_config': {'flake_count': 15},     # Reducerat för Pi3B
+    'lp156wh4_optimizations': {
+        'gpu_acceleration': False,           # Inaktiverat för Pi3B
+        'target_fps': 30                     # Lägre framerate
+    }
+}
+```
+
+**🚀 Raspberry Pi 5:**
+```python
+'weather_effects': {
+    'enabled': True,
+    'rain_config': {'droplet_count': 75},   # Fullt antal för Pi5
+    'snow_config': {'flake_count': 40},     # Fullt antal för Pi5
+    'lp156wh4_optimizations': {
+        'gpu_acceleration': True,            # GPU-acceleration
+        'target_fps': 60                     # Smooth 60fps
+    }
+}
+```
+
+### 🔧 API-endpoints för Weather Effects
+
+**Konfigurations-API:**
+```bash
+curl http://SERVER-IP:8036/api/weather-effects-config
+```
+*Returnerar aktuell Weather Effects-konfiguration och SMHI-integration status.*
+
+**Debug-API (kräver debug_logging: True):**
+```bash
+curl http://SERVER-IP:8036/api/weather-effects-debug
+```
+*Visar detaljerad mappning av SMHI-symboler till effekter för felsökning.*
+
+### 🎨 Anpassning av effekter
+
+**Ändra regn-färg (CSS):**
+```css
+.rain-particle {
+    background: linear-gradient(to bottom, 
+        rgba(0, 170, 255, 0.9) 0%, 
+        rgba(0, 170, 255, 0.7) 50%, 
+        transparent 100%);
+}
+```
+
+**Ändra snö-tecken:**
+```python
+'snow_config': {
+    'characters': ['❄', '❅', '❆', '*', '+', '·'],  # Fler snöflingor
+}
+```
+
+**Vindpåverkad regn:**
+```python
+'rain_config': {
+    'wind_direction': 'left-to-right',  # Diagonal regn
+}
+```
+
 ## 🚀 Användning
 
-### Starta dashboarden
+### 🖥️ Starta server
 
-**Linux:**
+**Linux/Pi:**
 ```bash
 cd ~/vaderdisplay
 python3 app.py
@@ -395,22 +638,55 @@ python3 app.py
 **Synology:**
 ```bash
 cd ~/vaderdisplay
-./start_weather.sh
+python3 app.py
 ```
 
-### Öppna i webbläsare
+**Automatisk start:** Se autostart-instruktioner i installationssektionerna.
 
-- **Lokalt**: `http://localhost:8036`
-- **Från annan enhet**: `http://DIN-IP-ADRESS:8036`
+### 📱 Öppna på klienter
 
-### Kioskläge (Raspberry Pi)
+- **📍 Server-adress**: `http://SERVER-IP:8036`
+- **🔍 Hitta IP**: Kör `ip addr` på servern
+- **🏠 Lokalt (Pi+skärm)**: `http://localhost:8036`
 
+### 🎮 Kioskläge-alternativ
+
+**📺 Dedikerad Pi-display:**
 ```bash
-# Fullskärm utan kontroller
 chromium-browser --kiosk --disable-infobars http://localhost:8036
 ```
 
-### Stoppa dashboarden
+**📱 Android kioskläge:**
+- Installera "Kiosk Browser Lockdown" från Google Play
+- Konfigurera för `http://SERVER-IP:8036`
+
+**🍎 iPad kioskläge:**
+- Använd "Guided Access" (Inställningar → Tillgänglighet)
+- Starta webapp och aktivera Guided Access
+
+### 🔧 API-endpoints
+
+**Aktuell väderdata:**
+```bash
+curl http://SERVER-IP:8036/api/current
+```
+
+**Weather Effects-konfiguration:**
+```bash
+curl http://SERVER-IP:8036/api/weather-effects-config
+```
+
+**Systemstatus:**
+```bash
+curl http://SERVER-IP:8036/api/status
+```
+
+**Trycktrend-data:**
+```bash
+curl http://SERVER-IP:8036/api/pressure_trend
+```
+
+### ⏹️ Stoppa server
 
 **Ctrl+C** i terminalen eller hitta process:
 
@@ -422,32 +698,9 @@ ps aux | grep app.py
 kill [PROCESS_ID]
 ```
 
-## 📱 iPad Webbapp-genväg
-
-Lägg till dashboarden som en app-ikon på iPad:
-
-![iPad Setup](screenshots/screenshot2.png)
-
-### Steg för iPad:
-
-1. **Öppna Safari** på iPad
-2. **Navigera** till `http://DIN-SERVER-IP:8036`
-3. **Tryck på delningsknappen** (kvadrat med uppåtpil)
-4. **Välj "Lägg till på hemskärmen"**
-5. **Ändra namnet** till "Väder Dashboard"
-6. **Tryck "Lägg till"**
-
-Nu visas dashboarden som en app-ikon på hemskärmen och öppnas i fullskärmsläge utan Safari-kontroller.
-
-### Tips för iPad:
-
-- **Landscape-orientering** rekommenderas för bästa upplevelse
-- **Inaktivera Auto-Lock** i Inställningar → Skärm och ljusstyrka
-- **Guided Access** kan användas för kioskfunktionalitet
-
 ## 🎛️ Anpassningar
 
-### Ändra tema
+### 🎨 Ändra tema
 
 Redigera `reference/config.py`:
 
@@ -457,7 +710,7 @@ Redigera `reference/config.py`:
 }
 ```
 
-### Ändra uppdateringsintervall
+### ⏱️ Ändra uppdateringsintervall
 
 ```python
 'ui': {
@@ -466,7 +719,7 @@ Redigera `reference/config.py`:
 }
 ```
 
-### Ändra vindenheter
+### 💨 Ändra vindenheter
 
 ```python
 'ui': {
@@ -474,11 +727,26 @@ Redigera `reference/config.py`:
 }
 ```
 
-### Anpassad CSS
+### 🌦️ Anpassa Weather Effects
+
+```python
+'weather_effects': {
+    'enabled': True,
+    'intensity': 'medium',  # Fastställd intensitet
+    'rain_config': {
+        'droplet_count': 75,  # Fler regndroppar
+        'wind_direction': 'left-to-right'  # Vindpåverkad regn
+    }
+}
+```
+
+### 🎨 Anpassad CSS
 
 Redigera `static/css/styles.css` för visuella ändringar. CSS:en är optimerad för LP156WH4 (1366×768) men kan anpassas för andra skärmar.
 
-### Ändra port
+Weather Effects-specifik CSS finns i `static/css/weather-effects.css`.
+
+### 🔌 Ändra port
 
 Redigera `app.py` längst ner:
 
@@ -493,211 +761,97 @@ app.run(
 
 ## 🛠️ Felsökning
 
-### Vanliga problem och lösningar
+### 🔍 Vanliga problem och lösningar
 
-#### Dashboard startar inte
+#### 🚫 Server startar inte
 
-**Kommandopaket 1: Grundläggande systemkontroll**
+**Systemkontroll:**
 ```bash
-python3 --version
-python3 -c "import flask, requests; print('✅ Alla moduler OK')"
+python3 --version  # Kräver 3.8+
+python3 -c "import flask, requests; print('✅ Moduler OK')"
 python3 -c "from reference.config import CONFIG; print('✅ Config OK')"
 ```
-*Kontrollerar Python-version (kräver 3.8+), Flask/requests-installation och config-filens validitet.*
 
-#### Ingen väderdata visas
+#### 🌐 Klient kan inte ansluta
 
-**Kommandopaket 2: Internetanslutning och API-test**
+**Nätverksdiagnostik:**
 ```bash
-ping -c 3 google.com
-curl -s "https://opendata-download-metfcst.smhi.se/api/category/pmp3g/version/2/geotype/point/lon/18.0686/lat/59.3293/data.json" | head -10
+# På server
+ip addr show | grep 'inet 192'
+netstat -tulpn | grep :8036
+
+# På klient  
+ping SERVER-IP
+curl http://SERVER-IP:8036/api/status
 ```
-*Testar internetanslutning och SMHI API-åtkomst med Stockholm-koordinater.*
 
-#### Netatmo fungerar inte
+#### 📱 Weather Effects fungerar inte
 
-**Snabb lösning - växla till SMHI-only:**
+**Weather Effects-diagnostik:**
+```bash
+curl -s http://SERVER-IP:8036/api/weather-effects-config | grep -E "(enabled|error)"
+python3 -c "from reference.config import CONFIG; print('WE enabled:', CONFIG.get('weather_effects', {}).get('enabled', False))"
+```
+
+#### 🐌 Prestanda-problem
+
+**För mobila enheter:**
+```python
+# I config.py - reducera partikelantal
+'rain_config': {'droplet_count': 25}
+'snow_config': {'flake_count': 15}
+```
+
+**För äldre Pi:**
+```bash
+# Aktivera GPU-minne
+echo "gpu_mem=128" | sudo tee -a /boot/config.txt
+sudo reboot
+```
+
+#### 🏠 Netatmo fungerar inte
+
+**Snabb fix - använd SMHI-only:**
 ```bash
 sed -i "s/'use_netatmo': True/'use_netatmo': False/" reference/config.py
 python3 app.py
 ```
-*Inaktiverar Netatmo tillfälligt och startar om för att testa SMHI-only-läge.*
 
-#### Port eller åtkomstproblem
-
-**Kommandopaket 3: Nätverksdiagnostik**
-```bash
-netstat -tulpn | grep :8036
-ss -tulpn | grep :8036
-sudo ufw status
-```
-*Kontrollerar om port 8036 är upptagen, visar aktiva anslutningar och brandväggsstatus.*
-
-#### Synology-specifika problem
-
-**Kommandopaket 4: Synology-diagnostik**
-```bash
-which python3
-ls -la ~/vaderdisplay/
-tail -20 ~/vaderdisplay/weather.log
-ps aux | grep python3
-```
-*Kontrollerar Python-sökväg, filrättigheter, loggar och aktiva Python-processer.*
-
-#### Debug-läge
+### 🔧 Debug-läge
 
 **Aktivera detaljerad felsökning:**
 ```bash
 cd ~/vaderdisplay
 cp app.py app.py.backup
 sed -i 's/debug=False/debug=True/' app.py
+sed -i "s/'debug_logging': False/'debug_logging': True/" reference/config.py
 python3 app.py
 ```
-*Skapar backup och aktiverar Flask debug-läge för detaljerad felrapportering.*
 
-### Systemstatus-kontroll
+### 📊 Komplett systemkontroll
 
-**Kommandopaket 5: Komplett systemkontroll**
 ```bash
-echo "=== Flask Weather Dashboard - Systemkontroll ==="
-echo "Python: $(python3 --version)"
-echo "Flask: $(python3 -c 'import flask; print(flask.__version__)' 2>/dev/null || echo 'EJ INSTALLERAT')"
-echo "Requests: $(python3 -c 'import requests; print(requests.__version__)' 2>/dev/null || echo 'EJ INSTALLERAT')"
-echo "Nätverk: $(curl -s --max-time 5 https://api.smhi.se > /dev/null && echo 'OK' || echo 'PROBLEM')"
-echo "Disk: $(df -h . | tail -1 | awk '{print $4}')"
-echo "RAM: $(free -h | grep Mem | awk '{print $7}')"
-echo "Config: $(python3 -c 'from reference.config import CONFIG; print("OK")' 2>/dev/null || echo 'PROBLEM')"
-```
-*Komplett systemverifiering som kontrollerar alla kritiska komponenter.*
-
-### API-endpoints för diagnos
-
-**Testa API-funktionalitet:**
-```bash
-curl http://localhost:8036/api/status
-curl http://localhost:8036/api/current
-curl http://localhost:8036/api/pressure_trend
-```
-*Kontrollerar att alla API-endpoints svarar korrekt.*
-
-### Prestandaoptimering för Raspberry Pi 3B
-
-**Kommandopaket 6: Pi-optimering**
-```bash
-echo "gpu_mem=128" | sudo tee -a /boot/config.txt
-sudo systemctl disable bluetooth
-sudo systemctl disable wifi-powersave@wlan0.service
-```
-*Inaktiverar Bluetooth och WiFi-energisparläge för stabil prestanda.*
-
-**Optimerat kioskläge:**
-```bash
-chromium-browser --memory-pressure-off --disable-dev-shm-usage --disable-web-security --kiosk http://localhost:8036
-```
-*Startar Chromium med optimerade inställningar för låg RAM-användning på Pi 3B.*
-
-## 🔧 Support
-
-### Komplett systemverifiering
-
-**Kommandopaket 1: Allt-i-ett systemkontroll**
-```bash
-echo "=== Flask Weather Dashboard - Komplett Systemkontroll ==="
-echo "Datum: $(date)"
+echo "=== Weather Dashboard Systemkontroll ==="
 echo "System: $(uname -a)"
 echo "Python: $(python3 --version)"
 echo "Flask: $(python3 -c 'import flask; print(flask.__version__)' 2>/dev/null || echo 'EJ INSTALLERAT')"
-echo "Requests: $(python3 -c 'import requests; print(requests.__version__)' 2>/dev/null || echo 'EJ INSTALLERAT')"
-echo "Git: $(git --version 2>/dev/null || echo 'EJ INSTALLERAT')"
-echo "Curl: $(curl --version 2>/dev/null | head -1 || echo 'EJ INSTALLERAT')"
-echo "Nätverk: $(ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo 'OK' || echo 'PROBLEM')"
-echo "SMHI API: $(curl -s --max-time 5 https://api.smhi.se > /dev/null && echo 'OK' || echo 'PROBLEM')"
-echo "Disk: $(df -h . | tail -1 | awk '{print $4}')"
-echo "RAM: $(free -h | grep Mem | awk '{print $7}')"
+echo "Nätverk: $(curl -s --max-time 5 https://api.smhi.se > /dev/null && echo 'OK' || echo 'PROBLEM')"
 echo "Config: $(python3 -c 'from reference.config import CONFIG; print("OK")' 2>/dev/null || echo 'PROBLEM')"
+echo "Weather Effects: $(python3 -c 'from reference.config import CONFIG; print("AKTIVERAT" if CONFIG.get("weather_effects", {}).get("enabled") else "INAKTIVERAT")' 2>/dev/null || echo 'CONFIG-FEL')"
 echo "Port 8036: $(netstat -tuln | grep :8036 > /dev/null && echo 'UPPTAGEN' || echo 'LEDIG')"
 ```
-*Kör en komplett diagnos av alla systemkomponenter och visar resultat i strukturerat format.*
 
-### Processhantering
+## 🔧 Support
 
-**Kommandopaket 2: Flask-processhantering**
-```bash
-ps aux | grep "python3 app.py"
-pkill -f "python3 app.py"
-nohup python3 app.py > flask.log 2>&1 &
-tail -f flask.log
-```
-*Visar aktiva Flask-processer, stoppar dem, startar i bakgrunden och visar loggar i realtid.*
+### 📚 Resurser
 
-**Kommandopaket 3: Porthantering och nätverksstatus**
-```bash
-netstat -tulpn | grep python3
-ss -tulpn | grep python3
-lsof -i :8036
-sudo ufw status numbered
-```
-*Kontrollerar nätverksanslutningar för Python-processer, visar port 8036-status och brandväggsinställningar.*
+- **GitHub Issues**: [https://github.com/cgillinger/vaderdisplay/issues](https://github.com/cgillinger/vaderdisplay/issues)
+- **Konfiguration**: `reference/config_example.py` har detaljerade kommentarer
+- **API-dokumentation**: Tillgänglig via `/api/`-endpoints
 
-### Backup och återställning
+### 🆙 Uppdateringar
 
-**Kommandopaket 4: Säkerhetskopiering av konfiguration**
-```bash
-mkdir -p backup/$(date +%Y%m%d_%H%M%S)
-cp reference/config.py backup/$(date +%Y%m%d_%H%M%S)/
-cp app.py backup/$(date +%Y%m%d_%H%M%S)/
-echo "✅ Backup skapad i backup/$(date +%Y%m%d_%H%M%S)/"
-```
-*Skapar tidsstämplad backup av kritiska konfigurationsfiler.*
-
-### Automatisk installation (helt ny miljö)
-
-**Kommandopaket 5: Fullständig automatisk installation**
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install python3 python3-pip git curl nano chromium-browser -y
-cd ~
-git clone https://github.com/cgillinger/vaderdisplay.git
-cd vaderdisplay
-pip3 install flask requests
-cp reference/config_example.py reference/config.py
-echo "✅ Installation klar! Redigera reference/config.py och kör: python3 app.py"
-```
-*Komplett installation från början för nya system - laddar ner direkt från GitHub utan konfiguration.*
-
-### Loggar och monitoring
-
-**Kommandopaket 6: Logghantering**
-```bash
-tail -50 weather.log
-grep ERROR weather.log
-grep WARNING weather.log
-du -sh weather.log
-find . -name "*.log" -mtime +7 -delete
-```
-*Visar senaste loggar, filtrerar fel/varningar, kontrollerar loggstorlek och rensar gamla loggar.*
-
-### Prestanda och resurser
-
-**Kommandopaket 7: Resursmonitoring**
-```bash
-top -p $(pgrep -f "python3 app.py")
-free -h
-df -h
-iostat 1 3
-vcgencmd measure_temp
-```
-*Övervakar CPU/RAM-användning för Flask, visar disk/minne och temperatur (Pi-specifikt).*
-
-### Community och hjälp
-
-- **GitHub Issues**: [https://github.com/cgillinger/vaderdisplay/issues](https://github.com/cgillinger/vaderdisplay/issues) - För bugrapporter och feature-förfrågningar
-- **Dokumentation**: Denna README och kommentarer i koden
-- **Config-exempel**: `reference/config_example.py` har detaljerade kommentarer
-
-### Uppdateringar
-
-**Backup och uppdatering:**
+**Backup och uppdatera:**
 ```bash
 cd ~/vaderdisplay
 cp reference/config.py reference/config.backup
@@ -705,7 +859,18 @@ git pull
 cp reference/config.backup reference/config.py
 python3 app.py
 ```
-*Säkerhetskopierar konfiguration, hämtar uppdateringar från GitHub och återställer personliga inställningar.*
+
+### 🔄 Återställning
+
+**Backup och återställ:**
+```bash
+# Skapa backup
+mkdir -p backup/$(date +%Y%m%d_%H%M%S)
+cp reference/config.py backup/$(date +%Y%m%d_%H%M%S)/
+
+# Återställ från backup
+cp backup/DATUM_TID/config.py reference/
+```
 
 ---
 
@@ -719,9 +884,10 @@ Detta projekt är open source. Se LICENSE-filen för detaljer.
 - **Netatmo**: För väderstation-API
 - **Weather Icons**: För professionella väderikoner
 - **Flask**: För robust webbramverk
+- **MagicMirror Community**: För inspiration till Weather Effects-systemet
 
 ---
 
-**🌤️ Lycka till med din väder-dashboard!**
+**🌤️ Lycka till med din väder-dashboard med Weather Effects!**
 
-För frågor och support, skapa en issue på GitHub eller kontakta projektansvariga.
+**📱 Perfekt för både surfplattor och dedikerade displayer!**
