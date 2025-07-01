@@ -2,18 +2,18 @@
 
 **GitHub Repository:** [https://github.com/cgillinger/vaderdisplay](https://github.com/cgillinger/vaderdisplay)
 
-En modern, responsiv väder-dashboard som fungerar på alla skärmstorlekar och enheter. Visar väderprognos från SMHI med valfri integration av Netatmo väderstation för faktiska mätningar. **Nytt: Weather Effects med animerade regn- och snöeffekter!**
+En modern, responsiv väder-dashboard som fungerar på alla skärmstorlekar och enheter. Visar väderprognos från SMHI med valfri integration av Netatmo väderstation för faktiska mätningar. Inkluderar Weather Effects med animerade regn- och snöeffekter.
 
 ![Dashboard Preview](screenshots/screenshot2.png)
 
 ## 🎯 Vad behöver jag?
 
-### 📊 Scenario 1: Server + Surfplatta/Telefon (REKOMMENDERAT)
+### 📊 Scenario 1: Server + Surfplatta/Telefon
 
 **🖥️ Server (kör dashboarden):**
 - Raspberry Pi, Linux-dator eller Synology NAS
 - Python 3.8+ och internetanslutning
-- **Inga skärm eller webbläsare behövs**
+- Ingen skärm eller webbläsare behövs
 
 **📱 Klient (visar dashboarden):**
 - iPad, Android-platta, telefon eller dator
@@ -44,7 +44,7 @@ python3 app.py
 **Synology NAS:**
 ```bash
 python3 -m pip install --user flask requests
-cd ~ && git clone https://github.com/cgillinger/vaderdisplay.git && cd vaderdisplay
+cd /var/services/homes/$(whoami) && git clone https://github.com/cgillinger/vaderdisplay.git && cd vaderdisplay
 cp reference/config_example.py reference/config.py && python3 app.py
 ```
 
@@ -70,13 +70,13 @@ Flask Weather Dashboard är en elegant väder-dashboard som kombinerar SMHI:s v�
 
 ### 🌟 Två driftlägen:
 
-**📊 SMHI-only (REKOMMENDERAT för nybörjare)**
+**📊 SMHI-only (för användare utan Netatmo-utrustning)**
 - ✅ Fungerar direkt utan extra konfiguration
 - ✅ Visar väderprognos från SMHI
 - ✅ Luftfuktighet från SMHI:s observationer
 - ✅ Enkel trycktrend baserad på SMHI-data
 
-**🏠 SMHI + Netatmo (För avancerade användare)**
+**🏠 SMHI + Netatmo (för användare med Netatmo-väderstation)**
 - ✅ Allt från SMHI-only-läget PLUS:
 - ✅ Faktisk temperatur från din Netatmo-väderstation
 - ✅ CO2-mätning och luftkvalitet
@@ -103,7 +103,7 @@ Flask Weather Dashboard är en elegant väder-dashboard som kombinerar SMHI:s v�
 ### 🌦️ Weather Effects 
 - **🌧️ Regn-animationer**: Realistiska regndroppar med vindpåverkan
 - **❄️ Snö-effekter**: Fallande snöflingor med sparkle-effekter
-- **⚡ SMHI-integration**: Automatiska effekter baserat på vädersymboler (1-27)
+- **⚡ SMHI-integration**: Automatiska effekter där SMHI vädersymboler från SMHI:s officiella API bestämmer typ och nederbörd bestämmer intensitet
 - **🎛️ Konfigurerbar intensitet**: Light, medium, heavy eller auto-detektering
 - **🖥️ LP156WH4-optimerad**: 60fps animationer optimerade för specifik skärm
 - **🚀 GPU-acceleration**: Pi5-optimerad för smooth prestanda
@@ -123,7 +123,7 @@ Servern kör Flask-applikationen och hanterar all väderdata. **Ingen skärm ell
 
 - **Linux-distribution** (Ubuntu, Debian, Raspberry Pi OS, Synology DSM)
 - **Python 3.8+**
-- **2GB+ RAM** (rekommenderat)
+- **2GB+ RAM**
 - **1GB lagringsutrymme**
 - **Internetuppkoppling** för SMHI API
 
@@ -199,7 +199,7 @@ sudo systemctl start weather-dashboard
 
 ```bash
 python3 -m pip install --user flask requests
-cd ~
+cd /var/services/homes/$(whoami)
 git clone https://github.com/cgillinger/vaderdisplay.git
 cd vaderdisplay
 cp reference/config_example.py reference/config.py
@@ -221,7 +221,7 @@ python3 app.py
 3. **Användare**: Ditt användarnamn
 4. **Script:** 
    ```bash
-   cd ~/vaderdisplay && python3 app.py
+   cd /var/services/homes/$(whoami)/vaderdisplay && python3 app.py
    ```
 5. **Schema**: **När systemet startar**
 
@@ -257,7 +257,7 @@ Klienter visar dashboarden från servern. Fungerar på alla enheter med modern w
 6. **✅ Tryck "Lägg till"**
 
 #### iPad-tips:
-- **🔄 Landscape-orientering** rekommenderas för bästa upplevelse
+- **🔄 Landscape-orientering** ger bästa upplevelse
 - **🔒 Inaktivera Auto-Lock:** Inställningar → Skärm och ljusstyrka → Auto-Lock → Aldrig
 - **🎯 Guided Access:** För kioskfunktionalitet (Inställningar → Tillgänglighet → Guided Access)
 - **⚡ Weather Effects** fungerar smidigt på iPad Pro och nyare modeller
@@ -289,7 +289,7 @@ Klienter visar dashboarden från servern. Fungerar på alla enheter med modern w
 - **🎮 Kioskläge:** Använd appar som "Kiosk Browser Lockdown" för offentliga installationer
 - **📱 Olika storlekar:** Fungerar på 7"-13" plattor, layout anpassas automatiskt
 
-#### Rekommenderade Android-plattor:
+#### Android-plattor som fungerar bra:
 - **Samsung Galaxy Tab A/S-serien** (bra prestanda för Weather Effects)
 - **Lenovo Tab M-serien** (budget-vänlig, fungerar bra)
 - **Huawei MatePad** (snabb, smooth animationer)
@@ -301,7 +301,7 @@ Klienter visar dashboarden från servern. Fungerar på alla enheter med modern w
 
 #### Display-systemkrav:
 
-- **Raspberry Pi 3B eller bättre** (Pi5 rekommenderat för Weather Effects)
+- **Raspberry Pi 3B eller bättre** (Pi5 ger bäst prestanda för Weather Effects)
 - **15.6" skärm** (LP156WH4 optimerat, men fungerar med alla storlekar)
 - **Chromium webbläsare** för kioskläge
 - **4GB+ SD-kort**
@@ -383,7 +383,7 @@ Huvudkonfigurationen görs i `reference/config.py`. Kopiera från `config_exampl
 ```python
 CONFIG = {
     # Huvudinställning: SMHI-only eller SMHI+Netatmo
-    'use_netatmo': False,  # Sätt till True om du har Netatmo
+    'use_netatmo': False,  # Sätt till True om du har Netatmo-väderstation
     
     'smhi': {
         # Koordinater för väderdata
@@ -428,7 +428,7 @@ CONFIG = {
 | `'ms'` | Meter per sekund | 5.2 m/s |
 | `'kmh'` | Kilometer per timme | 18 km/h |
 
-### 🏠 Netatmo-konfiguration (valfritt)
+### 🏠 Netatmo-konfiguration (krävs endast för Netatmo-väderstation)
 
 **OBS:** Krävs ENDAST om `use_netatmo: True`
 
@@ -466,11 +466,11 @@ CONFIG = {
 
 ### ✨ Funktioner
 
-Weather Effects tillhandahåller **realistiska väderanimationer** som automatiskt aktiveras baserat på SMHI:s väderdata:
+Weather Effects tillhandahåller **realistiska väderanimationer** som automatiskt aktiveras baserat på SMHI:s officiella väderdata från deras API:
 
 - **🌧️ Regn-effekter**: Animerade regndroppar med vindpåverkan
 - **❄️ Snö-effekter**: Fallande snöflingor med sparkle-animationer  
-- **⚡ SMHI-integration**: Automatisk aktivering baserat på vädersymboler (1-27)
+- **⚡ SMHI-integration**: Automatisk aktivering baserat på SMHI:s officiella vädersymboler från deras API
 - **🎛️ Intensitet**: Konfigurerbar eller auto-detektering från nederbörd
 - **🖥️ LP156WH4-optimerad**: Specifikt optimerad för 1366×768 LED LCD-paneler
 - **🚀 Prestanda**: 60fps GPU-accelererade animationer för Pi5
@@ -527,14 +527,14 @@ CONFIG = {
 
 | Intensitet | Beskrivning | Användning |
 |------------|-------------|------------|
-| `'auto'` | **Rekommenderat** - Bestäms automatiskt från SMHI nederbörd | Mest realistisk |
+| `'auto'` | Bestäms automatiskt från SMHI nederbörd | Mest realistisk |
 | `'light'` | Lätta effekter med färre partiklar | Prestanda-sparläge |
 | `'medium'` | Standard-intensitet | Balanserat läge |
 | `'heavy'` | Intensiva effekter med många partiklar | Dramatisk effekt |
 
 ### 🌡️ SMHI Vädersymbol-mappning
 
-Weather Effects aktiveras automatiskt baserat på SMHI:s vädersymboler:
+Weather Effects aktiveras automatiskt baserat på SMHI:s officiella vädersymboler från deras API:
 
 | SMHI Symboler | Effekt | Beskrivning |
 |---------------|--------|-------------|
@@ -637,7 +637,7 @@ python3 app.py
 
 **Synology:**
 ```bash
-cd ~/vaderdisplay
+cd /var/services/homes/$(whoami)/vaderdisplay
 python3 app.py
 ```
 

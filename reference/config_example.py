@@ -1,8 +1,9 @@
-# config.example.py - Weather Dashboard Configuration Template
+# config.example.py - Weather Dashboard Configuration Template med WeatherEffects
 # =============================================================================
 # 🔒 SÄKERHET: Denna fil innehåller INGA riktiga tokens/nycklar
 # 📁 SETUP: Kopiera till config.py och fyll i dina riktiga värden
 # 🚫 VARNING: Lägg ALDRIG till config.py till Git - den innehåller hemligheter!
+# ✨ NYT FAS 2: WeatherEffects-konfiguration tillagd för MagicMirror-kompatibilitet
 # =============================================================================
 
 CONFIG = {
@@ -67,6 +68,65 @@ CONFIG = {
         # Sol-funktioner
         'show_sun_times': True,  # True/False - Visa soluppgång/solnedgång
         'sun_cache_hours': 24    # 1-168 timmar - Hur länge soltider cachas
+    },
+    
+    # =============================================================================
+    # ✨ FAS 2: WEATHEREFFECTS KONFIGURATION - MagicMirror-kompatibel
+    # =============================================================================
+    
+    'weather_effects': {
+        # 🌦️ HUVUDINSTÄLLNING: Aktivera/inaktivera vädereffekter
+        'enabled': False,  # EXEMPEL: False = Inaktiverat, ändra till True för att aktivera regn/snö-animationer
+        
+        # 🎚️ INTENSITET: Automatisk eller manuell intensitetskontroll
+        'intensity': 'auto',  # 'auto' = Baserat på SMHI precipitation, 'light', 'medium', 'heavy'
+        
+        # ☔ REGN-KONFIGURATION (MagicMirror-standard inställningar)
+        'rain_config': {
+            'droplet_count': 50,        # 10-100: Antal regndroppar (MM standard: 50)
+            'droplet_speed': 2.0,       # 0.5-5.0: Hastighet i sekunder (MM standard: 2.0)  
+            'wind_direction': 'none',   # 'none', 'left-to-right', 'right-to-left'
+            'enable_splashes': False,   # True/False: Splash-effekter vid markträff (MM standard: False)
+            'comment': 'Regn-animationer baserade på SMHI symbols 8-10, 18-20 (regnskurar/regn) + 11,21 (åska)'
+        },
+        
+        # ❄️ SNÖ-KONFIGURATION (MagicMirror-standard inställningar)
+        'snow_config': {
+            'flake_count': 25,          # 10-50: Antal snöflingor (MM standard: 25)
+            'characters': ['*', '+'],   # Lista med tecken för snöflingor (MM standard: ['*', '+'])
+            'sparkle_enabled': False,   # True/False: Glittrande snöflingor (MM standard: False)
+            'min_size': 0.8,           # 0.5-2.0: Minsta storlek i em (MM standard: 0.8)
+            'max_size': 1.5,           # 1.0-3.0: Största storlek i em (MM standard: 1.5)
+            'speed': 1.0,              # 0.5-2.0: Hastighets-multiplier (MM standard: 1.0)
+            'comment': 'Snö-animationer baserade på SMHI symbols 15-17, 25-27 (snöbyar/snöfall) + 12-14, 22-24 (snöblandat)'
+        },
+        
+        # ⚙️ AVANCERADE INSTÄLLNINGAR
+        'transition_duration': 1000,   # 500-3000: Transition-tid i ms (MM standard: 1000)
+        'debug_logging': False,        # True/False: Detaljerad console-loggning för felsökning
+        'fallback_enabled': True,      # True/False: Graceful fallbacks vid API-fel
+        
+        # 🎯 LP156WH4 OPTIMERINGAR (1366×768 LED LCD Panel)
+        'lp156wh4_optimizations': {
+            'enabled': True,           # True/False: Aktivera LP156WH4-specifika optimeringar
+            'contrast_boost': 1.1,     # 1.0-1.3: Kontrast-förstärkning för LED LCD (standard: 1.1)
+            'brightness_boost': 1.1,   # 1.0-1.3: Ljusstyrke-förstärkning (standard: 1.1)
+            'gpu_acceleration': True,  # True/False: GPU-acceleration för Pi5 (standard: True)
+            'target_fps': 60,         # 30/60: Målframerate för animationer (standard: 60)
+            'comment': 'Optimeringar för LP156WH4 panel och Pi5 GPU-prestanda'
+        },
+        
+        # 📊 SMHI SYMBOL MAPPING (Läs-endast referens)
+        'smhi_mapping_reference': {
+            'rain': [8, 9, 10, 18, 19, 20],      # Regnskurar och regn
+            'snow': [15, 16, 17, 25, 26, 27],    # Snöbyar och snöfall
+            'sleet': [12, 13, 14, 22, 23, 24],   # Snöblandat regn (behandlas som snö)
+            'thunder': [11, 21],                 # Åska (behandlas som intensivt regn)
+            'clear': [1, 2, 3, 4, 5, 6, 7],     # Klart väder (ingen effekt)
+            'comment': 'SMHI weather symbols → WeatherEffects mapping (används automatiskt av systemet)'
+        },
+        
+        'comment': 'WeatherEffects ger MagicMirror-kompatibla regn/snö-animationer baserade på SMHI-data'
     }
 }
 
@@ -80,6 +140,7 @@ CONFIG = {
 # ✅ Visar luftfuktighet från SMHI observationer  
 # ✅ Visar lufttryck från SMHI
 # ✅ Enkel trycktrend baserad på SMHI-data
+# ✅ WeatherEffects (regn/snö-animationer) baserade på SMHI weather symbols
 # ❌ Ingen faktisk temperatur från din plats
 # ❌ Ingen CO2-mätning eller ljudnivå
 
@@ -90,6 +151,7 @@ CONFIG = {
 # ✅ Ljudnivå-mätning
 # ✅ Avancerad trycktrend baserad på Netatmo-historik
 # ✅ Smart data-blending från flera stationer
+# ✅ WeatherEffects fortsätter fungera (baserade på SMHI symbols)
 # ❌ Kräver Netatmo-väderstation och API-setup
 
 # 💡 REKOMMENDATION: Börja med use_netatmo=False, uppgradera senare om du skaffar väderstation
@@ -106,7 +168,14 @@ CONFIG = {
 #    5. Spara filen och kör: python3 app.py
 #    ✅ KLART! Du har en fungerande väder-dashboard
 
-# 🏠 STEG 2: LÄGG TILL NETATMO (VALFRITT - AVANCERAT)
+# 🌦️ STEG 2: AKTIVERA WEATHEREFFECTS (VALFRITT - REKOMMENDERAT)
+#    1. Öppna config.py
+#    2. Ändra weather_effects.enabled från False till True
+#    3. Spara filen och starta om: python3 app.py
+#    4. Ladda om webbläsarsidan
+#    ✅ KLART! Nu visas regn/snö-animationer vid dåligt väder
+
+# 🏠 STEG 3: LÄGG TILL NETATMO (VALFRITT - AVANCERAT)
 #    1. Skaffa Netatmo-väderstation
 #    2. Gå till https://dev.netatmo.com/apps
 #    3. Skapa en ny app eller använd befintlig
@@ -116,12 +185,54 @@ CONFIG = {
 #    7. Ersätt alla 'YOUR_NETATMO_*_HERE' med riktiga värden
 #    8. Starta om: python3 app.py
 
-# 🌅 STEG 3: FÖRBÄTTRA SOLTIDER (VALFRITT)
+# 🌅 STEG 4: FÖRBÄTTRA SOLTIDER (VALFRITT)
 #    1. Gå till https://ipgeolocation.io/
 #    2. Registrera dig för gratis konto (1000 anrop/månad)
 #    3. Kopiera din API-nyckel
 #    4. Ersätt 'YOUR_IPGEOLOCATION_API_KEY_HERE' med din nyckel
 #    (Om du hoppar över detta används förenklad solberäkning)
+
+# =============================================================================
+# 🌦️ WEATHEREFFECTS SNABBGUIDE - NYT FAS 2
+# =============================================================================
+
+# 🚀 SNABB AKTIVERING:
+#    1. Sätt weather_effects.enabled = True i config.py
+#    2. Starta om Flask-servern: python3 app.py
+#    3. WeatherEffects aktiveras automatiskt vid regn/snö från SMHI
+#    ✅ KLART! Animationer visas nu baserat på väderdata
+
+# 🎚️ INTENSITETSINSTÄLLNINGAR:
+# - 'auto': Automatisk baserat på SMHI precipitation (REKOMMENDERAT)
+# - 'light': Få partiklar, långsamma animationer (bra för låg prestanda)
+# - 'medium': Standard antal partiklar och hastighet
+# - 'heavy': Många partiklar, snabba animationer (kräver bra prestanda)
+
+# ☔ REGN-ANPASSNINGAR:
+# - droplet_count: 30 = lätt regn, 50 = medel, 80 = kraftigt regn
+# - droplet_speed: 3.0 = snabbt regn, 2.0 = medel, 1.0 = långsamt regn
+# - wind_direction: 'left-to-right' för vindpåverkat regn
+
+# ❄️ SNÖ-ANPASSNINGAR:
+# - flake_count: 15 = lätt snöfall, 25 = medel, 40 = kraftigt snöfall
+# - characters: ['❄', '❅', '❆'] för Unicode-snöflingor (kräver font-stöd)
+# - sparkle_enabled: True för glittrande snöflingor (mer GPU-intensivt)
+
+# 🔧 PRESTANDA-OPTIMERING FÖR PI3B/PI5:
+# - Minska droplet_count/flake_count om animationer är hackiga
+# - Sätt target_fps till 30 om 60fps är för krävande
+# - Inaktivera gpu_acceleration om det ger problem
+
+# 🐛 FELSÖKNING WEATHEREFFECTS:
+# - Sätt debug_logging = True för detaljerad console-output
+# - Kontrollera browser developer tools för JavaScript-fel
+# - Verifiera att /api/weather-effects-config returnerar korrekt JSON
+# - Kontrollera att både CSS och JS för WeatherEffects laddas
+
+# 🚫 INAKTIVERA WEATHEREFFECTS:
+#    1. Sätt weather_effects.enabled = False i config.py
+#    2. Starta om Flask-servern: python3 app.py
+#    3. Inga regn/snö-animationer visas (endast statisk väderdata)
 
 # =============================================================================
 # VINDENHETER GUIDE - Fullständig lista över tillgängliga alternativ
@@ -185,6 +296,18 @@ CONFIG = {
 # ❌ PROBLEM: "Fel koordinater/fel väder"
 # ✅ LÖSNING: Kontrollera latitude/longitude i config.py
 
+# ❌ PROBLEM: "WeatherEffects fungerar inte" (NYT FAS 2)
+# ✅ LÖSNING: Kontrollera weather_effects.enabled = True och starta om Flask-servern
+
+# ❌ PROBLEM: "Animationer är hackiga på Pi3B/Pi5" (NYT FAS 2)
+# ✅ LÖSNING: Minska droplet_count/flake_count eller sätt target_fps till 30
+
+# ❌ PROBLEM: "Inga effekter visas trots regn/snö" (NYT FAS 2)
+# ✅ LÖSNING: Aktivera debug_logging och kontrollera console för SMHI symbol-mappning
+
+# ❌ PROBLEM: "JavaScript-fel för WeatherEffects" (NYT FAS 2)
+# ✅ LÖSNING: Kontrollera att /static/js/weather-effects.js laddas korrekt
+
 # ❌ PROBLEM: "Netatmo autentiseringsfel" (ENDAST om use_netatmo=True)
 # ✅ LÖSNING: Kontrollera client_id, client_secret och refresh_token
 
@@ -206,7 +329,14 @@ CONFIG = {
 #    2. Sätt: use_netatmo = False
 #    3. Spara filen
 #    4. Starta om: python3 app.py
-#    → Du ser bara SMHI-väderprognos
+#    → Du ser bara SMHI-väderprognos (WeatherEffects fortsätter fungera)
+
+# 🌦️ FÖR ATT AKTIVERA WEATHEREFFECTS:
+#    1. Öppna config.py
+#    2. Sätt: weather_effects.enabled = True
+#    3. Spara filen
+#    4. Starta om: python3 app.py
+#    → Du ser regn/snö-animationer vid dåligt väder
 
 # 🏠 FÖR ATT LÄGGA TILL NETATMO:
 #    1. Sätt upp Netatmo API-uppgifter först (se guide ovan)
@@ -233,4 +363,5 @@ CONFIG = {
 #    1. Kontrollera att du följt setup-guiden ovan
 #    2. Kolla felsökningssektionen
 #    3. Testa med SMHI-only läget först (use_netatmo=False)
-#    4. Kontrollera loggar när du kör python3 app.py
+#    4. Aktivera WeatherEffects för mer visuell upplevelse
+#    5. Kontrollera loggar när du kör python3 app.py
