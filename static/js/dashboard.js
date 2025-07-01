@@ -1049,7 +1049,7 @@ async function initializeDashboard() {
         hideLoadingOverlay();
         
         // WeatherEffects initialization
-        if (dashboardState.config?.weather_effects?.enabled) {
+        if (dashboardState.config?.weather_effects_enabled) {
             initializeWeatherEffects().catch(error => {
                 console.warn("WeatherEffects initialization failed:", error);
             });

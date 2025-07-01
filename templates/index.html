@@ -17,8 +17,8 @@
     <!-- FAS 3 CSS - Graciös UI-degradering -->
     <link rel="stylesheet" href="/static/css/styles.css">
     
-    <!-- WeatherEffects CSS - Conditional loading -->
-    {% if config.weather_effects and config.weather_effects.enabled %}
+    <!-- WeatherEffects CSS - Conditional loading FIXAD -->
+    {% if weather_effects_enabled %}
     <link rel="stylesheet" href="/static/css/weather-effects.css">
     {% endif %}
 </head>
@@ -199,8 +199,8 @@
     </div>
 
     <!-- JavaScript - KORRIGERAD -->
-    <!-- WeatherEffects JS - Conditional loading -->
-    {% if config.weather_effects and config.weather_effects.enabled %}
+    <!-- WeatherEffects JS - Conditional loading FIXAD -->
+    {% if weather_effects_enabled %}
     <script src="/static/js/weather-effects.js"></script>
     {% endif %}
 
