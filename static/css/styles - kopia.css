@@ -5,7 +5,6 @@
 /* + KONSISTENT VINDLAYOUT: Alltid radbryt för uniform storlek */
 /* FAS 3: GRACIÖS UI-DEGRADERING för Netatmo-oberoende drift */
 /* FIX: SMHI-only temperaturlinjering med sol-ikoner */
-/* UPPDATERING: Stockholm-rubrik flyttad ner för bättre placering */
 
 /* === CSS RESET & BASE === */
 * {
@@ -420,7 +419,7 @@ body {
 
 .position-header {
     position: absolute;
-    top: 45px;  /* ÄNDRAT: från 12px → 45px för att flytta ner Stockholm-rubriken märkbart */
+    top: 12px;
     left: clamp(18px, 2.3vw, 32px);
     display: flex;
     flex-direction: column;
