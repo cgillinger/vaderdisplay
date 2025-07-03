@@ -23,6 +23,7 @@ reference/tokens.json
 
 pressure_history.json
 sun_cache.json
+struktur.txt
 weather_cache.json
 flask.log
 *.log
