@@ -1,0 +1,114 @@
+=== FORECAST FORMATTERING ANALYS ===
+Datum: Thu Jul  3 03:02:31 PM CEST 2025
+
+=== 1. Forecast i dashboard_utils ===
+dashboard_utils/data_formatters.py:94:def format_forecast_data_for_api(forecast_data: Optional[list]) -> Optional[list]:
+dashboard_utils/data_formatters.py:99:        forecast_data (list): Raw prognosdata från SMHI
+dashboard_utils/data_formatters.py:104:    if not forecast_data or not isinstance(forecast_data, list):
+dashboard_utils/data_formatters.py:107:    formatted_forecast = []
+dashboard_utils/data_formatters.py:109:    for forecast_item in forecast_data:
+dashboard_utils/data_formatters.py:110:        if not isinstance(forecast_item, dict):
+dashboard_utils/data_formatters.py:114:            'time': forecast_item.get('time'),
+dashboard_utils/data_formatters.py:115:            'temperature': forecast_item.get('temperature'),
+dashboard_utils/data_formatters.py:116:            'weather_symbol': forecast_item.get('weather_symbol'),
+dashboard_utils/data_formatters.py:117:            'weather_description': forecast_item.get('weather_description'),
+dashboard_utils/data_formatters.py:118:            'precipitation': forecast_item.get('precipitation', 0),
+dashboard_utils/data_formatters.py:119:            'wind_speed': forecast_item.get('wind_speed'),
+dashboard_utils/data_formatters.py:120:            'wind_direction': forecast_item.get('wind_direction'),
+dashboard_utils/data_formatters.py:121:            'relative_humidity': forecast_item.get('relative_humidity'),
+dashboard_utils/data_formatters.py:122:            'visibility': forecast_item.get('visibility')
+dashboard_utils/data_formatters.py:125:        formatted_forecast.append(formatted_item)
+dashboard_utils/data_formatters.py:127:    return formatted_forecast
+dashboard_utils/data_formatters.py:186:        data_type (str): Typ av data ('smhi', 'netatmo', 'forecast', 'sun')
+dashboard_utils/data_formatters.py:198:    elif data_type == 'forecast':
+Binary file dashboard_utils/__pycache__/data_formatters.cpython-38.pyc matches
+
+=== 2. Forecast i weather_routes.py ===
+from core.weather_state import get_weather_state
+from core.config_manager import get_current_theme
+from dashboard_utils.data_formatters import (
+    format_api_response_with_pressure_trend,
+    format_smhi_data_for_api,
+    format_forecast_data_for_api,
+    format_sun_data_for_api,
+    create_ui_config_for_api,
+    validate_api_data
+)
+
+# Skapa Blueprint för weather routes
+weather_bp = Blueprint('weather', __name__, url_prefix='/api')
+
+
+@weather_bp.route('/current')
+--
+    print(f"🌐 FAS 2: API Response - {mode}{effects}{humidity_info}")
+    
+    return jsonify(response_data)
+
+
+@weather_bp.route('/forecast')
+def api_forecast():
+    """API endpoint för 12-timmars väderprognos."""
+    weather_state = get_weather_state()
+    
+    formatted_forecast = format_forecast_data_for_api(weather_state['forecast_data'])
+    
+    if not validate_api_data(formatted_forecast, 'forecast'):
+        print("⚠️ Prognosdata validering misslyckades")
+    
+    return jsonify({
+        'forecast': formatted_forecast,
+        'last_update': weather_state['last_update'],
+        'data_points': len(formatted_forecast) if formatted_forecast else 0
+    })
+
+
+@weather_bp.route('/daily')
+def api_daily_forecast():
+    """API endpoint för daglig väderprognos."""
+    weather_state = get_weather_state()
+    
+    formatted_daily = format_forecast_data_for_api(weather_state['daily_forecast_data'])
+    
+    if not validate_api_data(formatted_daily, 'forecast'):
+        print("⚠️ Daglig prognosdata validering misslyckades")
+    
+    return jsonify({
+        'daily_forecast': formatted_daily,
+        'last_update': weather_state['last_update'],
+        'forecast_days': len(formatted_daily) if formatted_daily else 0
+    })
+
+
+@weather_bp.route('/weather')
+def api_weather():
+    """FAS 2: Alias för /api/current för bakåtkompatibilitet."""
+    return api_current_weather()
+
+
+@weather_bp.route('/sun')
+
+=== 3. format_forecast_data_for_api funktion ===
+def format_forecast_data_for_api(forecast_data: Optional[list]) -> Optional[list]:
+    """
+    Formatera prognosdata för API-respons.
+    
+    Args:
+        forecast_data (list): Raw prognosdata från SMHI
+        
+    Returns:
+        list: Formaterad prognosdata eller None
+    """
+    if not forecast_data or not isinstance(forecast_data, list):
+        return None
+    
+    formatted_forecast = []
+    
+    for forecast_item in forecast_data:
+
+=== 4. Alla imports från dashboard_utils ===
+Binary file ./api/__pycache__/weather_routes.cpython-38.pyc matches
+Binary file ./api/__pycache__/system_routes.cpython-38.pyc matches
+./api/system_routes.py:14:from dashboard_utils.pressure_utils import create_smhi_pressure_trend_fallback
+./api/weather_routes.py:12:from dashboard_utils.data_formatters import (
+./app.py:17:- utils/pressure_dashboard_utils.py   - Trycktrend-funktioner
