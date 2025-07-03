@@ -1,9 +1,9 @@
-# config.py - Weather Dashboard Configuration med WeatherEffects Support + Animated Icons
+# config.py - Weather Dashboard Configuration med WeatherEffects Support + SVG Integration
 # =============================================================================
 # Riktiga Python-kommentarer för tydlig konfiguration!
 # FAS 1: Netatmo-oberoende funktionalitet tillagd
-# ✨ NYT FAS 2: WeatherEffects-konfiguration tillagd för MagicMirror-kompatibilitet
-# 🎬 NYT FAS 3: Animated Icons (amCharts SVG) support tillagd
+# ✨ FAS 2: WeatherEffects-konfiguration tillagd för MagicMirror-kompatibilitet
+# 🎬 FAS 3: ANIMATED ICONS SUPPORT - amCharts SVG integration
 # =============================================================================
 
 CONFIG = {
@@ -61,7 +61,7 @@ CONFIG = {
             'day_theme': 'light',     # Tema för dagtid
             'night_theme': 'dark',    # Tema för natttid  
             'night_start': '21:00',   # När natttema börjar (HH:MM)
-            'night_end': '06:06'      # När natttema slutar (HH:MM)
+            'night_end': '06:00'      # När natttema slutar (HH:MM)
         },
         
         # Fönsterinställningar (används ej i kiosk-läge)
@@ -82,7 +82,7 @@ CONFIG = {
         'enabled': True,  # True = Använd amCharts SVG, False = Använd statiska Weather Icons
         
         # 📁 SÖKVÄGAR: Lokala amCharts SVG-filer
-        'base_path': '/static/assets/icons/animated',
+        'base_path': '/static/assets/icons/amcharts-svg',  # 🔧 FIX: Korrigerad sökväg
         'day_path': 'day',        # Relativ sökväg för dag-ikoner
         'night_path': 'night',    # Relativ sökväg för natt-ikoner
         'animated_path': 'animated',  # Relativ sökväg för specialanimationer (åska, etc.)
@@ -155,6 +155,19 @@ CONFIG = {
     },
     
     # =============================================================================
+    # 🎬 LP156WH4 OPTIMERINGAR - Förstärkta ikoner och animationer
+    # =============================================================================
+    
+    'lp156wh4_optimizations': {
+        'enabled': True,          # True/False: Aktivera LP156WH4-specifika optimeringar
+        'contrast_boost': 1.1,    # 1.0-1.3: Kontrast-förstärkning för bättre synlighet
+        'brightness_boost': 1.1,  # 1.0-1.3: Ljusstyrka-förstärkning (standard: 1.1)
+        'gpu_acceleration': True,  # True/False: GPU-acceleration för Pi5 (standard: True)
+        'target_fps': 60,         # 30/60: Målframerate för animationer (standard: 60)
+        'comment': 'Optimeringar för LP156WH4 panel och Pi5 GPU-prestanda'
+    },
+    
+    # =============================================================================
     # ✨ FAS 2: WEATHEREFFECTS KONFIGURATION - MagicMirror-kompatibel
     # =============================================================================
     
@@ -194,7 +207,7 @@ CONFIG = {
         'lp156wh4_optimizations': {
             'enabled': True,           # True/False: Aktivera LP156WH4-specifika optimeringar
             'contrast_boost': 1.1,     # 1.0-1.3: Kontrast-förstärkning för LED LCD (standard: 1.1)
-            'brightness_boost': 1.1,   # 1.0-1.3: Ljusstyrke-förstärkning (standard: 1.1)
+            'brightness_boost': 1.1,   # 1.0-1.3: Ljusstyrka-förstärkning (standard: 1.1)
             'gpu_acceleration': True,  # True/False: GPU-acceleration för Pi5 (standard: True)
             'target_fps': 60,         # 30/60: Målframerate för animationer (standard: 60)
             'comment': 'Optimeringar för LP156WH4 panel och Pi5 GPU-prestanda'
@@ -235,9 +248,9 @@ CONFIG = {
 # - animatedIcons = False → Weather Icons (statiska font-ikoner)
 
 # 📁 SVG-FILSTRUKTUR (automatiskt hanterat):
-# /static/assets/icons/animated/day/        → Dag-ikoner
-# /static/assets/icons/animated/night/      → Natt-ikoner  
-# /static/assets/icons/animated/animated/   → Specialikoner (åska)
+# /static/assets/icons/amcharts-svg/day/        → Dag-ikoner
+# /static/assets/icons/amcharts-svg/night/      → Natt-ikoner  
+# /static/assets/icons/amcharts-svg/animated/   → Specialikoner (åska)
 
 # 🎨 ANPASSNINGAR:
 # - animation_speed: 'slow'/'normal'/'fast' för olika animationshastigheter
@@ -280,7 +293,7 @@ CONFIG = {
 # - Sätt target_fps till 30 om 60fps är för krävande
 # - Inaktivera gpu_acceleration om det ger problem
 
-# 🐛 FELSÖKNING:
+# 🐛 FELSÖKNING WEATHEREFFECTS:
 # - Sätt debug_logging = True för detaljerad console-output
 # - Kontrollera browser developer tools för JavaScript-fel
 # - Verifiera att /api/weather-effects-config returnerar korrekt JSON
@@ -297,7 +310,7 @@ CONFIG = {
 # ✅ Trycktrend baserad på Netatmo-historik
 # ✅ Smart data-blending från flera stationer
 # ✅ WeatherEffects baserade på SMHI weather symbols
-# ✅ Animerade ikoner baserade på SMHI weather symbols (NYT!)
+# ✅ Animerade ikoner från amCharts SVG (NYT FAS 3)
 
 # use_netatmo = False  (SMHI-ONLY MODE)
 # ⚡ Enbart SMHI-baserad väderapp
@@ -308,7 +321,7 @@ CONFIG = {
 # ✅ Förenklad trycktrend från SMHI-prognoser
 # ✅ Bibehållen design och funktionalitet
 # ✅ WeatherEffects fortfarande baserade på SMHI
-# ✅ Animerade ikoner fortfarande baserade på SMHI (NYT!)
+# ✅ Animerade ikoner fortsätter fungera (NYT FAS 3)
 
 # BYTE MELLAN LÄGEN:
 # 1. Ändra 'use_netatmo' till True/False
@@ -347,7 +360,7 @@ CONFIG = {
 # UPPDATERINGSINTERVALL GUIDE
 # =============================================================================
 
-# AKTUELLA: 15/10 minuter (balanserat för Pi3B)
+# AKTUELLA: 15/10 minuter (balanserat för Pi5)
 # Snabb:    5/5 minuter (mer CPU-belastning)
 # Standard: 15/10 minuter (rekommenderat)
 # Sparsamhet: 30/20 minuter (låg CPU-belastning)
