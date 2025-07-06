@@ -120,7 +120,7 @@ def update_weather_data() -> None:
             forecast_data = smhi_client.get_12h_forecast()
             update_weather_state('forecast_data', forecast_data)
             
-            daily_forecast_data = smhi_client.get_daily_forecast(4)
+            daily_forecast_data = smhi_client.get_daily_forecast(5)
             update_weather_state('daily_forecast_data', daily_forecast_data)
             
             # FAS 2: Debug-logging för luftfuktighetsdata
