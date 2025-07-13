@@ -7,6 +7,18 @@
     <meta name="google" content="notranslate">
     <title>Väder Dashboard - {{ location_name }}</title>
     
+    <!-- Favicon för alla enheter -->
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="/static/icon-512.png">
+    
+    <!-- PWA metadata för bättre mobilupplevelse -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Väder Stockholm">
+    <meta name="application-name" content="Väder Stockholm">
+    
     <!-- Weather Icons CSS - CDN (Cloudflare) för maximal tillgänglighet -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.12/css/weather-icons-wind.min.css">
@@ -198,13 +210,34 @@
         </div>
     </div>
 
-    <!-- JavaScript - KORRIGERAD -->
+    <!-- JavaScript - STEG 13: FÖRSTÄRKT LADDNINGSORDNING -->
     <!-- WeatherEffects JS - Conditional loading FIXAD -->
     {% if weather_effects_enabled %}
     <script src="/static/js/weather-effects.js"></script>
     {% endif %}
 
-    <!-- HÄR är ändringen – ES6-modul -->
-    <script type="module" src="/static/js/dashboard.js"></script>
+    <!-- STEG 1-12: Ladda refaktorerade moduler FÖRE dashboard.js -->
+    <script src="/static/js/dashboard/formatters-dashboard.js"></script>
+    <script src="/static/js/dashboard/wind-calculations.js"></script>
+    <script src="/static/js/dashboard/dom-helpers.js"></script>
+    <script src="/static/js/dashboard-components/weather-icon-renderer.js"></script>
+    <script src="/static/js/dashboard-components/fontawesome-renderer.js"></script>
+    <!-- STEG 6: CIRCULAR CLOCK MODUL -->
+    <script src="/static/js/dashboard-components/circular-clock.js"></script>
+    <!-- STEG 7: BAROMETER DISPLAY MODUL -->
+    <script src="/static/js/dashboard-components/barometer-display.js"></script>
+    <!-- STEG 8: INTELLIGENT DATA SOURCE MODUL -->
+    <script src="/static/js/dashboard-data/intelligent-data-source.js"></script>
+    <!-- STEG 9: UI ADAPTATION ENGINE MODUL -->
+    <script src="/static/js/dashboard-components/ui-adaptation-engine.js"></script>
+    <!-- STEG 10: FETCH API CLIENT MODUL -->
+    <script src="/static/js/dashboard-data/fetch-api-client.js"></script>
+    <!-- STEG 11: CURRENT WEATHER VIEW MODUL -->
+    <script src="/static/js/dashboard-views/current-weather-view.js"></script>
+    <!-- STEG 12: FORECAST VIEW MODUL -->
+    <script src="/static/js/dashboard-views/forecast-view.js"></script>
+    
+    <!-- MAIN: Dashboard JavaScript (använder modulerna ovan) -->
+    <script src="/static/js/dashboard.js"></script>
 </body>
 </html>
