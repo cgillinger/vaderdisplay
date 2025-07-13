@@ -7,6 +7,7 @@ FAS 2: VILLKORSSTYRD NETATMO-FUNKTIONALITET för oberoende drift
 + INTELLIGENT DATAHANTERING: Automatisk fallback till SMHI-only läge
 + FAS 2: SMHI LUFTFUKTIGHET: Integration av luftfuktighetsdata från SMHI observations-API
 + WEATHEREFFECTS: FAS 2 - API-stöd för WeatherEffects-konfiguration och SMHI-integration
++ SMHI WARNINGS: Integration av SMHI:s vädervarningar (skyfallsvarningar)
 """
 
 from flask import Flask, render_template, jsonify, request
@@ -24,6 +25,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'reference', 'data'))
 try:
     from smhi_client import SMHIClient
     from netatmo_client import NetatmoClient
+    from smhi_warnings_client import SMHIWarningsClient
     from utils import SunCalculator, get_weather_icon_unicode_char, get_weather_description_short
 except ImportError as e:
     print(f"❌ Import fel: {e}")
@@ -51,13 +53,19 @@ weather_state = {
     
     # FAS 2: WeatherEffects state tracking
     'weather_effects_enabled': False,  # Läses från config
-    'weather_effects_config': None     # Cachad WeatherEffects-konfiguration
+    'weather_effects_config': None,    # Cachad WeatherEffects-konfiguration
+    
+    # SMHI Warnings state tracking
+    'smhi_warnings_data': None,        # SMHI varningsdata
+    'warnings_last_update': None,      # Senaste varningsuppdatering
+    'warnings_enabled': True,          # Varningar aktiverade (kan göras konfigurerbart senare)
 }
 
 # API clients (initialiseras villkorsstyrt i init_api_clients)
 smhi_client = None
 netatmo_client = None
 sun_calculator = None
+smhi_warnings_client = None
 
 def load_config():
     """Ladda konfiguration från config.py med riktiga Python-kommentarer."""
@@ -93,6 +101,12 @@ def load_config():
             intensity = weather_effects_config.get('intensity', 'auto')
             print(f"   🌧️ Regn: {rain_count} droppar, ❄️ Snö: {snow_count} flingor, 🎚️ Intensitet: {intensity}")
         
+        # SMHI Warnings config-läsning (kan utökas senare)
+        warnings_config = CONFIG.get('smhi_warnings', {})
+        warnings_enabled = warnings_config.get('enabled', True)  # Default aktiverat
+        weather_state['warnings_enabled'] = warnings_enabled
+        print(f"⚠️ SMHI Varningar: {'AKTIVERAT' if warnings_enabled else 'INAKTIVERAT'}")
+        
         return CONFIG
         
     except ImportError as e:
@@ -123,8 +137,12 @@ def load_config_json_fallback():
         weather_state['weather_effects_enabled'] = config.get('weather_effects', {}).get('enabled', False)
         weather_state['weather_effects_config'] = config.get('weather_effects', {})
         
+        # SMHI Warnings fallback
+        weather_state['warnings_enabled'] = config.get('smhi_warnings', {}).get('enabled', True)
+        
         print(f"🧠 FAS 2: Netatmo-läge (fallback): {'AKTIVT' if weather_state['use_netatmo'] else 'INAKTIVT'}")
         print(f"🌦️ FAS 2: WeatherEffects (fallback): {'AKTIVERAT' if weather_state['weather_effects_enabled'] else 'INAKTIVERAT'}")
+        print(f"⚠️ SMHI Varningar (fallback): {'AKTIVERAT' if weather_state['warnings_enabled'] else 'INAKTIVERAT'}")
         
         return config
         
@@ -264,9 +282,10 @@ def get_smhi_weather_effect_type(weather_symbol):
 
 def init_api_clients(config):
     """FAS 2: Villkorsstyrd initialisering av API-klienter."""
-    global smhi_client, netatmo_client, sun_calculator
+    global smhi_client, netatmo_client, sun_calculator, smhi_warnings_client
     
     use_netatmo = weather_state['use_netatmo']
+    warnings_enabled = weather_state['warnings_enabled']
     
     try:
         # SMHI Client (alltid obligatorisk)
@@ -274,6 +293,22 @@ def init_api_clients(config):
         smhi_lon = config['smhi']['longitude']
         smhi_client = SMHIClient(smhi_lat, smhi_lon)
         print(f"✅ SMHI-klient initierad för {smhi_lat}, {smhi_lon}")
+        
+        # SMHI Warnings Client (villkorsstyrd)
+        if warnings_enabled:
+            try:
+                # Konfigurerbar cache-duration (default 10 min för varningar)
+                warnings_cache_duration = config.get('smhi_warnings', {}).get('cache_duration_minutes', 10) * 60
+                smhi_warnings_client = SMHIWarningsClient(cache_duration=warnings_cache_duration)
+                print(f"✅ SMHI Warnings-klient initierad (cache: {warnings_cache_duration//60} min)")
+            except Exception as e:
+                print(f"❌ SMHI Warnings-initialisering misslyckades: {e}")
+                print("🔄 Fortsätter utan varningsstöd")
+                smhi_warnings_client = None
+                weather_state['warnings_enabled'] = False
+        else:
+            smhi_warnings_client = None
+            print("📊 SMHI Varningar INAKTIVERAT i config")
         
         # FAS 2: Villkorsstyrd Netatmo Client
         if use_netatmo:
@@ -313,13 +348,70 @@ def init_api_clients(config):
         # FAS 2: Sammanfattning av initialiserat läge
         mode_summary = "SMHI + Netatmo" if weather_state['netatmo_available'] else "SMHI-only"
         effects_summary = " + WeatherEffects" if weather_state['weather_effects_enabled'] else ""
-        print(f"🎯 FAS 2: Systemläge - {mode_summary}{effects_summary}")
+        warnings_summary = " + Warnings" if weather_state['warnings_enabled'] else ""
+        print(f"🎯 FAS 2: Systemläge - {mode_summary}{effects_summary}{warnings_summary}")
         
         return True
         
     except Exception as e:
         print(f"❌ Fel vid initialisering av API-klienter: {e}")
         return False
+
+def update_warnings_data():
+    """Uppdatera SMHI varningsdata."""
+    global weather_state
+    
+    if not smhi_warnings_client or not weather_state['warnings_enabled']:
+        return
+    
+    try:
+        print("⚠️ Uppdaterar SMHI varningar...")
+        
+        # Hämta skyfallsvarningar (huvudfokus)
+        heavy_rain_warnings = smhi_warnings_client.get_heavy_rain_warnings()
+        active_rain_warnings = smhi_warnings_client.get_active_heavy_rain_warnings()
+        
+        # Hämta varningssammanfattning
+        warnings_summary = smhi_warnings_client.get_warnings_summary()
+        
+        # Strukturera data för frontend
+        warnings_data = {
+            'heavy_rain_warnings': heavy_rain_warnings,
+            'active_heavy_rain_warnings': active_rain_warnings,
+            'summary': warnings_summary,
+            'last_update': datetime.now().isoformat(),
+            'api_available': True
+        }
+        
+        weather_state['smhi_warnings_data'] = warnings_data
+        weather_state['warnings_last_update'] = datetime.now().isoformat()
+        
+        # Logga resultat
+        total_rain = len(heavy_rain_warnings)
+        active_rain = len(active_rain_warnings)
+        total_warnings = warnings_summary.get('total_warnings', 0)
+        
+        print(f"✅ SMHI varningar uppdaterade - Skyfall: {total_rain} totalt, {active_rain} aktiva, {total_warnings} alla varningar")
+        
+        # Extra logging för aktiva varningar
+        if active_rain_warnings:
+            print("🚨 AKTIVA SKYFALLSVARNINGAR:")
+            for warning in active_rain_warnings:
+                areas = ', '.join(warning.get('areas', []))[:50]  # Begränsa längd
+                severity = warning.get('severity_info', {}).get('description', 'Okänd')
+                print(f"   - {severity}: {areas}")
+        
+    except Exception as e:
+        print(f"❌ Fel vid uppdatering av SMHI varningar: {e}")
+        # Sätt fallback-data vid fel
+        weather_state['smhi_warnings_data'] = {
+            'heavy_rain_warnings': [],
+            'active_heavy_rain_warnings': [],
+            'summary': {'total_warnings': 0, 'active_warnings': 0},
+            'last_update': datetime.now().isoformat(),
+            'api_available': False,
+            'error': str(e)
+        }
 
 def update_weather_data():
     """FAS 2: Uppdatera väderdata med villkorsstyrd Netatmo-hantering + SMHI luftfuktighet."""
@@ -388,6 +480,10 @@ def update_weather_data():
             weather_state['sun_data'] = sun_calculator.get_sun_times(lat, lon)
             print("✅ FAS 2: Sol-data uppdaterad")
         
+        # SMHI Warnings data (villkorsstyrd)
+        if weather_state['warnings_enabled']:
+            update_warnings_data()
+        
         # Uppdatera timestamp och status
         weather_state['last_update'] = datetime.now().isoformat()
         
@@ -403,6 +499,9 @@ def update_weather_data():
         
         if weather_state['weather_effects_enabled']:
             status_parts.append("WeatherEffects: ON")
+        
+        if weather_state['warnings_enabled']:
+            status_parts.append("Warnings: ON")
         
         weather_state['status'] = f"Data uppdaterad ({' | '.join(status_parts)})"
         
@@ -588,7 +687,8 @@ def api_current_weather():
             'wind_unit': weather_state['config'].get('ui', {}).get('wind_unit', 'land'),
             'use_netatmo': weather_state['use_netatmo'],  # NYT: För frontend-detektering
             'netatmo_available': weather_state['netatmo_available'],  # NYT: Faktisk tillgänglighet
-            'weather_effects_enabled': weather_state['weather_effects_enabled']  # FAS 2: WeatherEffects-status
+            'weather_effects_enabled': weather_state['weather_effects_enabled'],  # FAS 2: WeatherEffects-status
+            'warnings_enabled': weather_state['warnings_enabled']  # SMHI Warnings-status
         }
     
     response_data = {
@@ -604,9 +704,10 @@ def api_current_weather():
     # FAS 2: Debug-logging för API-respons
     mode = "SMHI + Netatmo" if formatted_netatmo else "SMHI-only"
     effects = " + WeatherEffects" if weather_state['weather_effects_enabled'] else ""
+    warnings = " + Warnings" if weather_state['warnings_enabled'] else ""
     smhi_humidity = weather_state['smhi_data'].get('humidity') if weather_state['smhi_data'] else None
     humidity_info = f" (humidity: {smhi_humidity}%)" if smhi_humidity is not None else " (no humidity)"
-    print(f"🌐 FAS 2: API Response - {mode}{effects}{humidity_info}")
+    print(f"🌐 FAS 2: API Response - {mode}{effects}{warnings}{humidity_info}")
     
     return jsonify(response_data)
 
@@ -622,6 +723,66 @@ def api_daily_forecast():
     return jsonify({
         'daily_forecast': weather_state['daily_forecast_data'],
         'last_update': weather_state['last_update']
+    })
+
+@app.route('/api/warnings')
+def api_warnings():
+    """API endpoint för SMHI vädervarningar."""
+    if not weather_state['warnings_enabled']:
+        return jsonify({
+            'error': 'SMHI Warnings ej aktiverat',
+            'enabled': False,
+            'heavy_rain_warnings': [],
+            'active_heavy_rain_warnings': [],
+            'summary': {'total_warnings': 0}
+        })
+    
+    warnings_data = weather_state.get('smhi_warnings_data')
+    if not warnings_data:
+        return jsonify({
+            'error': 'Inga varningsdata tillgängliga',
+            'enabled': True,
+            'api_available': False,
+            'heavy_rain_warnings': [],
+            'active_heavy_rain_warnings': [],
+            'summary': {'total_warnings': 0}
+        })
+    
+    # Lägg till metadata
+    response = {
+        **warnings_data,
+        'enabled': True,
+        'cache_info': {
+            'cache_duration_minutes': 10,  # Default från SMHIWarningsClient
+            'last_api_update': weather_state['warnings_last_update']
+        }
+    }
+    
+    return jsonify(response)
+
+@app.route('/api/warnings/heavy-rain')
+def api_warnings_heavy_rain():
+    """Dedikerad API endpoint för skyfallsvarningar."""
+    if not weather_state['warnings_enabled'] or not weather_state.get('smhi_warnings_data'):
+        return jsonify({
+            'enabled': weather_state['warnings_enabled'],
+            'heavy_rain_warnings': [],
+            'active_count': 0,
+            'total_count': 0
+        })
+    
+    warnings_data = weather_state['smhi_warnings_data']
+    heavy_rain = warnings_data.get('heavy_rain_warnings', [])
+    active_heavy_rain = warnings_data.get('active_heavy_rain_warnings', [])
+    
+    return jsonify({
+        'enabled': True,
+        'heavy_rain_warnings': heavy_rain,
+        'active_heavy_rain_warnings': active_heavy_rain,
+        'active_count': len(active_heavy_rain),
+        'total_count': len(heavy_rain),
+        'last_update': warnings_data.get('last_update'),
+        'api_available': warnings_data.get('api_available', False)
     })
 
 @app.route('/api/status')
@@ -650,7 +811,10 @@ def api_status():
         ),
         'system_mode': 'SMHI + Netatmo' if weather_state['netatmo_available'] else 'SMHI-only',  # FAS 2: Systemläge
         'weather_effects_enabled': weather_state['weather_effects_enabled'],  # FAS 2: WeatherEffects-status
-        'weather_effects_config_loaded': weather_state['weather_effects_config'] is not None  # FAS 2: Config-status
+        'weather_effects_config_loaded': weather_state['weather_effects_config'] is not None,  # FAS 2: Config-status
+        'warnings_enabled': weather_state['warnings_enabled'],  # SMHI Warnings-status
+        'warnings_active': smhi_warnings_client is not None,  # SMHI Warnings-klient tillgänglig
+        'warnings_last_update': weather_state['warnings_last_update']  # Senaste varningsuppdatering
     })
 
 @app.route('/api/theme')
@@ -866,7 +1030,7 @@ def netatmo_updater():
 # === APP INITIALIZATION ===
 
 def initialize_app():
-    print("🚀 FAS 2: Startar Flask Weather Dashboard med WeatherEffects-stöd...")
+    print("🚀 FAS 2: Startar Flask Weather Dashboard med WeatherEffects + SMHI Warnings-stöd...")
     print("=" * 80)
     
     config = load_config()
@@ -895,14 +1059,15 @@ def initialize_app():
         print("📊 FAS 2: Netatmo-uppdaterare HOPPAS ÖVER (use_netatmo=False)")
     
     print("=" * 80)
-    print("🌤️ FAS 2: Flask Weather Dashboard redo med WeatherEffects!")
+    print("🌤️ FAS 2: Flask Weather Dashboard redo med WeatherEffects + SMHI Warnings!")
     print("📱 Öppna: http://localhost:8036")
     print("🖥️ Chrome Kiosk: chromium-browser --kiosk --disable-infobars http://localhost:8036")
     
     # FAS 2: Visa systemläge
     mode = "SMHI + Netatmo" if weather_state['netatmo_available'] else "SMHI-only"
     effects = " + WeatherEffects" if weather_state['weather_effects_enabled'] else ""
-    print(f"🎯 Systemläge: {mode}{effects}")
+    warnings = " + Warnings" if weather_state['warnings_enabled'] else ""
+    print(f"🎯 Systemläge: {mode}{effects}{warnings}")
     
     # FAS 2: Visa WeatherEffects API endpoints
     if weather_state['weather_effects_enabled']:
@@ -918,6 +1083,13 @@ def initialize_app():
             print(f"🔧 WeatherEffects Debug: http://localhost:8036/api/weather-effects-debug")
     else:
         print(f"📊 WeatherEffects: INAKTIVERAT (weather_effects.enabled=False)")
+    
+    # SMHI Warnings API endpoints
+    if weather_state['warnings_enabled']:
+        print(f"⚠️ SMHI Warnings API: http://localhost:8036/api/warnings")
+        print(f"🌧️ Skyfall-varningar: http://localhost:8036/api/warnings/heavy-rain")
+    else:
+        print(f"📊 SMHI Warnings: INAKTIVERAT")
     
     print(f"📊 Trycktrend API: http://localhost:8036/api/pressure_trend")
     print(f"🌬️ Vindenheter: {config['ui']['wind_unit']} (redigerbart i reference/config.py)")
