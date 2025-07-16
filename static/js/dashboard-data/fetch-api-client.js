@@ -77,8 +77,10 @@ async function updateAllData() {
             updateTheme(currentData.theme);
         }
         
-        // STEG 9: Använd UI Adaptation Engine istället för lokal funktion
-        adaptElementVisibility();
+        // JAVASCRIPT LOOP FIX: Tog bort adaptElementVisibility() som orsakade dubblering
+        // - applyUIAdaptations() hanterar redan alla UI-anpassningar
+        // - adaptElementVisibility() anropade samma funktioner igen → dubblering
+        // - Resultat: Halverat antal UI-uppdateringar per cykel
         
         dashboardState.lastUpdate = new Date().toISOString();
         
