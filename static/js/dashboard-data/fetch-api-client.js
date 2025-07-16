@@ -2,6 +2,8 @@
  * Fetch API Client - STEG 10 REFAKTORERING
  * API-hantering extraherat från dashboard.js
  * Hanterar datahämtning, timeout och tema-kontroll
+ * 
+ * LOOP FIX: Ta bort dubbel anropning av adaptHumiditySection()
  */
 
 // === API CONSTANTS ===
@@ -77,8 +79,8 @@ async function updateAllData() {
             updateTheme(currentData.theme);
         }
         
-        // STEG 9: Använd UI Adaptation Engine istället för lokal funktion
-        adaptElementVisibility();
+        // LOOP FIX: Ta bort adaptElementVisibility() som orsakar dubbel anropning
+        // adaptElementVisibility(); <- BORTTAGEN för att fixa loop
         
         dashboardState.lastUpdate = new Date().toISOString();
         
