@@ -2,6 +2,7 @@
 """
 Flask Weather Dashboard - Centraliserad State Management
 FAS 2: Refaktorering - Global state för väderdata och konfiguration
+SSOT-FIX: Utökad med warnings-stöd för komplett Single Source of Truth
 """
 
 from datetime import datetime
@@ -24,14 +25,21 @@ weather_state: Dict[str, Any] = {
     
     # FAS 2: WeatherEffects state tracking
     'weather_effects_enabled': False,  # Läses från config
-    'weather_effects_config': None     # Cachad WeatherEffects-konfiguration
+    'weather_effects_config': None,    # Cachad WeatherEffects-konfiguration
+    
+    # SSOT-FIX: SMHI Warnings state tracking
+    'smhi_warnings_data': None,        # SMHI varningsdata
+    'warnings_last_update': None,      # Senaste varningsuppdatering
+    'warnings_enabled': True,          # Varningar aktiverade (kan göras konfigurerbart senare)
 }
 
 # API clients - hanteras av weather_updater.py
+# SSOT-FIX: Utökad med smhi_warnings_client
 api_clients = {
     'smhi_client': None,
     'netatmo_client': None,
-    'sun_calculator': None
+    'sun_calculator': None,
+    'smhi_warnings_client': None  # SSOT-FIX: Tillagt för warnings-stöd
 }
 
 def get_weather_state() -> Dict[str, Any]:
@@ -59,7 +67,7 @@ def get_api_client(client_name: str) -> Optional[Any]:
     Hämta specifik API-klient.
     
     Args:
-        client_name (str): Namnet på klienten ('smhi_client', 'netatmo_client', 'sun_calculator')
+        client_name (str): Namnet på klienten ('smhi_client', 'netatmo_client', 'sun_calculator', 'smhi_warnings_client')
         
     Returns:
         API-klient eller None om inte initialiserad
@@ -98,7 +106,8 @@ def get_system_mode() -> str:
     """
     mode = "SMHI + Netatmo" if weather_state['netatmo_available'] else "SMHI-only"
     effects = " + WeatherEffects" if weather_state['weather_effects_enabled'] else ""
-    return f"{mode}{effects}"
+    warnings = " + Warnings" if weather_state['warnings_enabled'] else ""  # SSOT-FIX: Tillagt warnings
+    return f"{mode}{effects}{warnings}"
 
 def is_netatmo_active() -> bool:
     """
@@ -154,6 +163,45 @@ def get_humidity_info() -> Dict[str, Any]:
     
     return humidity_info
 
+# SSOT-FIX: Nya warnings-funktioner
+def is_warnings_enabled() -> bool:
+    """
+    Kontrollera om SMHI Warnings är aktiverat.
+    
+    Returns:
+        bool: True om warnings är aktiverat
+    """
+    return weather_state['warnings_enabled']
+
+def get_warnings_data() -> Optional[Dict[str, Any]]:
+    """
+    Hämta aktuell warnings-data.
+    
+    Returns:
+        dict: Warnings-data eller None om inte tillgänglig
+    """
+    return weather_state['smhi_warnings_data']
+
+def set_warnings_data(warnings_data: Dict[str, Any]) -> None:
+    """
+    Sätt warnings-data.
+    
+    Args:
+        warnings_data (dict): Warnings-data från API
+    """
+    global weather_state
+    weather_state['smhi_warnings_data'] = warnings_data
+    weather_state['warnings_last_update'] = datetime.now().isoformat()
+
+def get_warnings_last_update() -> Optional[str]:
+    """
+    Hämta senaste warnings-uppdateringstid.
+    
+    Returns:
+        str: ISO-formaterad timestamp eller None
+    """
+    return weather_state['warnings_last_update']
+
 def reset_state() -> None:
     """
     Återställ state till initial värden (för testing/restart).
@@ -170,13 +218,18 @@ def reset_state() -> None:
         'status': 'Återställd...',
         'netatmo_available': False,
         'weather_effects_enabled': False,
-        'weather_effects_config': None
+        'weather_effects_config': None,
+        # SSOT-FIX: Återställ warnings-state
+        'smhi_warnings_data': None,
+        'warnings_last_update': None,
+        'warnings_enabled': True
     })
     
     api_clients = {
         'smhi_client': None,
         'netatmo_client': None,
-        'sun_calculator': None
+        'sun_calculator': None,
+        'smhi_warnings_client': None  # SSOT-FIX: Inkludera warnings-klient
     }
     
     print("🔄 Weather state återställd")
