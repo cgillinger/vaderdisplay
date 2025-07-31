@@ -2,45 +2,9 @@
  * Current Weather View - STEG 11 REFAKTORERING
  * Nuvarande väder-funktioner extraherat från dashboard.js
  * Hanterar huvudkortet, temperatur, vind, luftfuktighet och ikoner
- * LP156WH4 OPTIMERING: Konfigurerbar SVG-huvudikon storlek
+ * AMCHARTS: SVG-stöd tillagt för huvudväderikoner
+ * LP156WH4 OPTIMERING: DUBBEL SVG-storlek för bättre synlighet
  */
-
-// === LP156WH4 KONFIGURATION ===
-const SVG_MAIN_ICON_SIZE = 140; // px - Ändra denna för att justera SVG-huvudikon storlek
-
-// === LP156WH4 KONFIGURATION ===
-const LP156WH4_SVG_SIZE = 140; // px - Ändra denna för att justera SVG-huvudikon storlek
-
-// === CSS INJECTION FÖR SVG-STORLEK ===
-function injectSVGStyling() {
-    const styleId = 'svg-main-icon-scaling';
-    if (document.getElementById(styleId)) return; // Redan tillagd
-    
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-        /* LP156WH4: Förstora SVG-huvudikon med width/height istället för transform */
-        #smhi-weather-icon img[src*=".svg"] {
-            width: ${LP156WH4_SVG_SIZE}px !important;
-            height: ${LP156WH4_SVG_SIZE}px !important;
-            object-fit: contain !important;
-            max-width: none !important;
-            max-height: none !important;
-        }
-        
-        #smhi-weather-icon svg {
-            width: ${LP156WH4_SVG_SIZE}px !important;
-            height: ${LP156WH4_SVG_SIZE}px !important;
-            max-width: none !important;
-            max-height: none !important;
-        }
-    `;
-    document.head.appendChild(style);
-    console.log(`🎨 SVG-storlek satt via width/height: ${LP156WH4_SVG_SIZE}px`);
-}
-
-// Injekta CSS när modulen laddas
-injectSVGStyling();
 
 // === CURRENT WEATHER FUNCTIONS ===
 
@@ -74,10 +38,22 @@ function updateCurrentWeather(data) {
                 iconElement.className = 'weather-icon';
                 
                 // STEG 4: Använd WeatherIconRenderer istället för WeatherIconManager
-                const weatherIcon = WeatherIconRenderer.createIcon(iconName, ['weather-main-icon', 'svg-scalable']);
+                const weatherIcon = WeatherIconRenderer.createIcon(iconName, ['weather-main-icon']);
+                
+                // LP156WH4 OPTIMERING: FYRDUBBEL storlek för huvudväderikonen
+                weatherIcon.style.cssText = `
+                    font-size: 240px !important;
+                    width: 240px !important;
+                    height: 240px !important;
+                    min-width: 240px !important;
+                    min-height: 240px !important;
+                    display: inline-block;
+                    line-height: 1;
+                `;
+                
                 iconElement.appendChild(weatherIcon);
                 
-                console.log(`🎨 Main weather icon: ${iconName} for symbol ${smhi.weather_symbol}`);
+                console.log(`🎨 LP156WH4: Huvudväderikonen FYRDUBBEL storlek (240px): ${iconName} for symbol ${smhi.weather_symbol}`);
                 
                 // WeatherEffects update
                 if (window.weatherEffectsManager) {
@@ -172,7 +148,7 @@ function updateCurrentWeather(data) {
         // STEG 8: Använd Intelligent Data Source istället för lokal funktion
         const pressureData = formatDataWithSource(netatmo.pressure || data.smhi?.pressure, 'pressure');
         
-        // STEG 7: Använd BarometerDisplay iställetför BarometerManager
+        // STEG 7: Använd BarometerDisplay istället för BarometerManager
         BarometerDisplay.updateBarometerDetail(pressureTrend, pressureData.value);
         
         // FÖRSTÄRKT VINDDATA UNDER FAKTISK (FAS 3: Bara om sektionen visas)
@@ -248,7 +224,7 @@ function updateWindUnderFaktisk(smhiData) {
             const windDir = getWindDirection(smhiData.wind_direction);
             const windDegree = Math.round(smhiData.wind_direction);
             
-            // FÖRSTÄRKT VÄDERRIKTNINGSPIL: 12px → 28px för LP156WH4-synlighet
+            // ÅTERSTÄLLD: Ursprunglig storlek för vindpil (bara SVG-huvudikonen ska vara stor)
             windArrowHTML = ` <i class="wi wi-wind from-${windDegree}-deg" style="
                 color: #4A9EFF; 
                 font-size: 28px; 
@@ -267,6 +243,8 @@ function updateWindUnderFaktisk(smhiData) {
         
         // STEG 4: Använd WeatherIconRenderer istället för WeatherIconManager
         const windIcon = WeatherIconRenderer.createIcon(windData.icon, []);
+        
+        // ÅTERSTÄLLD: Ursprunglig storlek för vindikon (bara SVG-huvudikonen ska vara stor)
         windIcon.style.cssText = `
             color: #4A9EFF; 
             font-size: 12px;
@@ -279,7 +257,7 @@ function updateWindUnderFaktisk(smhiData) {
         
         netatmoSection.appendChild(windElement);
         
-        console.log(`💨 FÖRSTÄRKT vinddata under FAKTISK: ${windText} (pil: 28px)`);
+        console.log(`💨 ÅTERSTÄLLD: Vinddata ursprungsstorlek - ikon: 12px, pil: 28px`);
     }
 }
 
@@ -314,7 +292,6 @@ function removeWindDetailItems() {
 function initializeRobustIcons() {
     console.log('🎨 FAS 3: Initialiserar graciös ikon-hantering med HUMIDITY FIX...');
     updateHumidityDisplay('50% Luftfuktighet');
-    injectSVGStyling(); // Aktivera SVG-storleksstyrning
     console.log('✅ FAS 3: Graciös ikon-hantering med HUMIDITY FIX initialiserad');
 }
 
@@ -331,6 +308,8 @@ function updateHumidityDisplay(humidityText) {
     
     // STEG 4: Använd WeatherIconRenderer istället för WeatherIconManager
     const humidityIcon = WeatherIconRenderer.createIcon('wi-humidity', ['pressure-icon']);
+    
+    // ÅTERSTÄLLD: Ursprunglig storlek för luftfuktighetsikon (bara SVG-huvudikonen ska vara stor)
     humidityIcon.style.cssText = `
         color: #4A9EFF;
         font-size: clamp(16px, 1.6rem, 21px);
@@ -341,7 +320,7 @@ function updateHumidityDisplay(humidityText) {
     humidityElement.appendChild(humidityIcon);
     humidityElement.insertAdjacentHTML('beforeend', `<span>${humidityText}</span>`);
     
-    console.log(`💧 HUMIDITY FIX: Luftfuktighetsikon skapad: wi-humidity`);
+    console.log(`💧 ÅTERSTÄLLD: Luftfuktighetsikon ursprungsstorlek: clamp(16px, 1.6rem, 21px)`);
 }
 
-console.log('✅ STEG 11: Current Weather View laddat - LP156WH4 SVG-ikoner konfigurerbara!');
+console.log('✅ STEG 11: Current Weather View laddat - Bara SVG-huvudikonen förstorrad till 240px!');

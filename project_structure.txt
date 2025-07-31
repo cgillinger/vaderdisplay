@@ -1,0 +1,176 @@
+.
+├── .gitignore
+├── app.py
+├── app.py:Zone.Identifier
+├── backup
+│   ├── script_update_20250718_115617
+│   │   └── current-weather-view.js
+│   ├── script_update_20250718_170754
+│   ├── script_update_20250718_170759
+│   └── script_update_20250718_170829
+│       └── current-weather-view.js
+├── core
+│   ├── __init__.py
+│   ├── config_manager.py
+│   ├── config_manager.py:Zone.Identifier
+│   ├── weather_state.py
+│   └── weather_updater.py
+├── filer.txt
+├── pressure_history.json
+├── pressure_trend_diagnosis.py
+├── project_structure.txt
+├── readme.md
+├── reference
+│   ├── config.py
+│   ├── config.py:Zone - kopia.Identifier
+│   ├── config.py:Zone.Identifier
+│   ├── config_example.py
+│   └── data
+│       ├── __init__.py
+│       ├── netatmo_client.py
+│       ├── smhi_client.py
+│       ├── smhi_warnings_client.py
+│       └── utils.py
+├── requirements.txt
+├── screenshots
+│   ├── icon.png
+│   ├── screenshot1.png
+│   └── screenshot2.png
+├── static
+│   ├── apple-touch-icon.png
+│   ├── assets
+│   │   ├── README.md
+│   │   ├── css
+│   │   │   └── icons.css
+│   │   └── icons
+│   │       ├── amcharts-svg
+│   │       │   ├── animated
+│   │       │   │   ├── thunder.svg
+│   │       │   │   ├── weather-sprite.svg
+│   │       │   │   ├── weather.svg
+│   │       │   │   ├── weather_sagittarius.svg
+│   │       │   │   └── weather_sunset.svg
+│   │       │   ├── day
+│   │       │   │   ├── cloudy-day-1.svg
+│   │       │   │   ├── cloudy-day-2.svg
+│   │       │   │   ├── cloudy-day-3.svg
+│   │       │   │   ├── day.svg
+│   │       │   │   ├── rainy-1.svg
+│   │       │   │   ├── rainy-2.svg
+│   │       │   │   ├── rainy-3.svg
+│   │       │   │   ├── rainy-4.svg
+│   │       │   │   ├── rainy-5.svg
+│   │       │   │   ├── rainy-6.svg
+│   │       │   │   ├── rainy-7.svg
+│   │       │   │   ├── snowy-1.svg
+│   │       │   │   ├── snowy-2.svg
+│   │       │   │   ├── snowy-3.svg
+│   │       │   │   ├── snowy-4.svg
+│   │       │   │   ├── snowy-5.svg
+│   │       │   │   └── snowy-6.svg
+│   │       │   └── night
+│   │       │       ├── cloudy-night-1.svg
+│   │       │       ├── cloudy-night-2.svg
+│   │       │       ├── cloudy-night-3.svg
+│   │       │       └── night.svg
+│   │       ├── weather-icons
+│   │       │   ├── css
+│   │       │   │   ├── weather-icons-wind.min.css
+│   │       │   │   └── weather-icons.min.css
+│   │       │   └── font
+│   │       │       ├── weathericons-regular-webfont.eot
+│   │       │       ├── weathericons-regular-webfont.svg
+│   │       │       ├── weathericons-regular-webfont.ttf
+│   │       │       ├── weathericons-regular-webfont.woff
+│   │       │       └── weathericons-regular-webfont.woff2
+│   │       └── weather-icons-svg
+│   │           ├── wi-barometer.svg
+│   │           ├── wi-cloud.svg
+│   │           ├── wi-cloudy.svg
+│   │           ├── wi-day-cloudy-high.svg
+│   │           ├── wi-day-cloudy.svg
+│   │           ├── wi-day-rain-mix.svg
+│   │           ├── wi-day-rain.svg
+│   │           ├── wi-day-showers.svg
+│   │           ├── wi-day-sleet.svg
+│   │           ├── wi-day-snow.svg
+│   │           ├── wi-day-sunny-overcast.svg
+│   │           ├── wi-day-sunny.svg
+│   │           ├── wi-day-thunderstorm.svg
+│   │           ├── wi-direction-up.svg
+│   │           ├── wi-fog.svg
+│   │           ├── wi-humidity.svg
+│   │           ├── wi-na.svg
+│   │           ├── wi-night-alt-cloudy.svg
+│   │           ├── wi-night-clear.svg
+│   │           ├── wi-night-cloudy-high.svg
+│   │           ├── wi-night-partly-cloudy.svg
+│   │           ├── wi-night-rain-mix.svg
+│   │           ├── wi-night-rain.svg
+│   │           ├── wi-night-showers.svg
+│   │           ├── wi-night-sleet.svg
+│   │           ├── wi-night-snow.svg
+│   │           ├── wi-night-thunderstorm.svg
+│   │           ├── wi-rain-mix.svg
+│   │           ├── wi-rain.svg
+│   │           ├── wi-raindrops.svg
+│   │           ├── wi-sleet.svg
+│   │           ├── wi-snow.svg
+│   │           ├── wi-strong-wind.svg
+│   │           ├── wi-sunrise.svg
+│   │           ├── wi-sunset.svg
+│   │           ├── wi-thunderstorm.svg
+│   │           ├── wi-wind-beaufort-0.svg
+│   │           ├── wi-wind-beaufort-1.svg
+│   │           ├── wi-wind-beaufort-10.svg
+│   │           ├── wi-wind-beaufort-11.svg
+│   │           ├── wi-wind-beaufort-12.svg
+│   │           ├── wi-wind-beaufort-2.svg
+│   │           ├── wi-wind-beaufort-3.svg
+│   │           ├── wi-wind-beaufort-4.svg
+│   │           ├── wi-wind-beaufort-5.svg
+│   │           ├── wi-wind-beaufort-6.svg
+│   │           ├── wi-wind-beaufort-7.svg
+│   │           ├── wi-wind-beaufort-8.svg
+│   │           └── wi-wind-beaufort-9.svg
+│   ├── css
+│   │   ├── styles.css
+│   │   ├── styles.css:Zone.Identifier
+│   │   └── weather-effects.css
+│   ├── favicon.ico
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── js
+│       ├── dashboard
+│       │   ├── dom-helpers.js
+│       │   ├── formatters-dashboard.js
+│       │   ├── formatters-dashboard.js:Zone - kopia.Identifier
+│       │   └── wind-calculations.js
+│       ├── dashboard - kopia.js
+│       ├── dashboard-components
+│       │   ├── barometer-display.js
+│       │   ├── circular-clock.js
+│       │   ├── fontawesome-renderer.js
+│       │   ├── ui-adaptation-engine.js
+│       │   ├── warnings-display.js
+│       │   ├── weather-icon-renderer.js
+│       │   └── weather-icon-renderer.js:Zone.Identifier
+│       ├── dashboard-data
+│       │   ├── fetch-api-client.js
+│       │   └── intelligent-data-source.js
+│       ├── dashboard-views
+│       │   ├── current-weather-view.js
+│       │   ├── current-weather-view.js:Zone.Identifier
+│       │   └── forecast-view.js
+│       ├── dashboard.js
+│       ├── dashboard.js:Zone - kopia.Identifier
+│       └── weather-effects.js
+├── sun_cache.json
+├── synology_start_script.sh
+├── templates
+│   ├── index - kopia.html
+│   ├── index.html
+│   └── index.html:Zone.Identifier
+└── tokens.json
+
+28 directories, 145 files

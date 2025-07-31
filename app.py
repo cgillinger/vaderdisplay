@@ -9,6 +9,7 @@ FAS 2: VILLKORSSTYRD NETATMO-FUNKTIONALITET för oberoende drift
 + WEATHEREFFECTS: FAS 2 - API-stöd för WeatherEffects-konfiguration och SMHI-integration
 + SMHI WARNINGS: Integration av SMHI:s vädervarningar (skyfallsvarningar)
 + SSOT-FIX: Ren Single Source of Truth - Använder endast core/ moduler
++ AMCHARTS: SVG-ikoner för väderikoner med minimal kodförändring
 """
 
 from flask import Flask, render_template, jsonify, request
@@ -97,6 +98,7 @@ def api_current_weather():
             'use_netatmo': weather_state['use_netatmo'],
             'netatmo_available': weather_state['netatmo_available'],
             'weather_effects_enabled': weather_state['weather_effects_enabled'],
+            'weather_icon_type': weather_state['config'].get('ui', {}).get('weather_icon_type', 'font'),  # AMCHARTS: Ikon-typ
             'warnings_enabled': weather_state['warnings_enabled']  # SSOT-FIX: Använd state
         }
     
@@ -485,6 +487,10 @@ def initialize_app():
     print(f"📊 Trycktrend API: http://localhost:8036/api/pressure_trend")
     print(f"🌬️ Vindenheter: {config['ui']['wind_unit']} (redigerbart i reference/config.py)")
     print(f"🎨 Tema: {config['ui']['theme']} (mörkt tema rekommenderat)")
+    
+    # AMCHARTS: Visa ikon-typ status
+    icon_type = config.get('ui', {}).get('weather_icon_type', 'font')
+    print(f"🎨 Väder-ikoner: {icon_type} ({'SVG amCharts' if icon_type == 'amcharts' else 'Weather Icons font'})")
     
     print("✅ REN SSOT implementerad - inga dubletter kvar!")
     print("=" * 80)

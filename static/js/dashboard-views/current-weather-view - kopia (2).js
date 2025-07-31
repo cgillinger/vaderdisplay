@@ -8,40 +8,6 @@
 // === LP156WH4 KONFIGURATION ===
 const SVG_MAIN_ICON_SIZE = 140; // px - Ändra denna för att justera SVG-huvudikon storlek
 
-// === LP156WH4 KONFIGURATION ===
-const LP156WH4_SVG_SIZE = 140; // px - Ändra denna för att justera SVG-huvudikon storlek
-
-// === CSS INJECTION FÖR SVG-STORLEK ===
-function injectSVGStyling() {
-    const styleId = 'svg-main-icon-scaling';
-    if (document.getElementById(styleId)) return; // Redan tillagd
-    
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-        /* LP156WH4: Förstora SVG-huvudikon med width/height istället för transform */
-        #smhi-weather-icon img[src*=".svg"] {
-            width: ${LP156WH4_SVG_SIZE}px !important;
-            height: ${LP156WH4_SVG_SIZE}px !important;
-            object-fit: contain !important;
-            max-width: none !important;
-            max-height: none !important;
-        }
-        
-        #smhi-weather-icon svg {
-            width: ${LP156WH4_SVG_SIZE}px !important;
-            height: ${LP156WH4_SVG_SIZE}px !important;
-            max-width: none !important;
-            max-height: none !important;
-        }
-    `;
-    document.head.appendChild(style);
-    console.log(`🎨 SVG-storlek satt via width/height: ${LP156WH4_SVG_SIZE}px`);
-}
-
-// Injekta CSS när modulen laddas
-injectSVGStyling();
-
 // === CURRENT WEATHER FUNCTIONS ===
 
 /**
@@ -74,8 +40,20 @@ function updateCurrentWeather(data) {
                 iconElement.className = 'weather-icon';
                 
                 // STEG 4: Använd WeatherIconRenderer istället för WeatherIconManager
-                const weatherIcon = WeatherIconRenderer.createIcon(iconName, ['weather-main-icon', 'svg-scalable']);
+                const weatherIcon = WeatherIconRenderer.createIcon(iconName, ['weather-main-icon']);
                 iconElement.appendChild(weatherIcon);
+                
+                // LP156WH4 OPTIMERING: Förstora bara SVG-ikoner, inte font-ikoner
+                setTimeout(() => {
+                    const svgElement = iconElement.querySelector('img[src*=".svg"], svg');
+                    if (svgElement) {
+                        svgElement.style.cssText = `
+                            transform: scale(${SVG_MAIN_ICON_SIZE / 70}) !important;
+                            transform-origin: center !important;
+                        `;
+                        console.log(`🎨 SVG-huvudikon skalad med transform: scale(${SVG_MAIN_ICON_SIZE / 70})`);
+                    }
+                }, 50);
                 
                 console.log(`🎨 Main weather icon: ${iconName} for symbol ${smhi.weather_symbol}`);
                 
@@ -314,7 +292,6 @@ function removeWindDetailItems() {
 function initializeRobustIcons() {
     console.log('🎨 FAS 3: Initialiserar graciös ikon-hantering med HUMIDITY FIX...');
     updateHumidityDisplay('50% Luftfuktighet');
-    injectSVGStyling(); // Aktivera SVG-storleksstyrning
     console.log('✅ FAS 3: Graciös ikon-hantering med HUMIDITY FIX initialiserad');
 }
 
