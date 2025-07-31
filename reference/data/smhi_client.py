@@ -66,287 +66,24 @@ class SMHIClient:
         Initialisera SMHI-klient.
         
         Args:
-            latitude: Latitud (decimal grader)
-            longitude: Longitud (decimal grader)
+            latitude: Latitud för väderprognos
+            longitude: Longitud för väderprognos
         """
         self.latitude = latitude
         self.longitude = longitude
-        self.last_fetch_time = None
-        self.cached_data = None
-        self.cache_duration = 300  # Cache i 5 minuter
         
-        # FAS 1: Luftfuktighet cache och station tracking
+        # Cache för API-data
+        self.cached_data = None
+        self.last_fetch_time = None
+        cache_duration_minutes = 15  # Cache i 15 minuter
+        self.cache_duration = cache_duration_minutes * 60
+        
+        # FAS 1: Cache för luftfuktighetsdata
         self.humidity_cache = None
-        self.humidity_cache_time = None
-        self.humidity_cache_duration = 600  # 10 minuters cache (observationer uppdateras mindre ofta)
-        self.nearest_humidity_station = None
+        self.humidity_last_fetch = None
+        self.humidity_cache_duration = 30 * 60  # 30 minuter för observations-data
         
         print(f"🌍 SMHI-klient initierad för position: {latitude}, {longitude}")
-    
-    # === FAS 1: LUFTFUKTIGHET METODER ===
-    
-    def _calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-        """
-        Beräkna Haversine-avstånd mellan två koordinater.
-        
-        Args:
-            lat1, lon1: Första koordinaten
-            lat2, lon2: Andra koordinaten
-            
-        Returns:
-            Avstånd i kilometer
-        """
-        # Konvertera till radianer
-        lat1_r = math.radians(lat1)
-        lon1_r = math.radians(lon1)
-        lat2_r = math.radians(lat2)
-        lon2_r = math.radians(lon2)
-        
-        # Haversine-formel
-        dlat = lat2_r - lat1_r
-        dlon = lon2_r - lon1_r
-        
-        a = (math.sin(dlat/2)**2 + 
-             math.cos(lat1_r) * math.cos(lat2_r) * math.sin(dlon/2)**2)
-        c = 2 * math.asin(math.sqrt(a))
-        
-        # Jordens radie i km
-        r = 6371
-        
-        return c * r
-    
-    def find_nearest_humidity_station(self) -> Optional[int]:
-        """
-        Hitta närmaste station med luftfuktighetsdata baserat på config-koordinater.
-        
-        Returns:
-            station_id (int) för närmaste station eller None vid fel
-        """
-        # Använd cachad station om vi redan hittat en
-        if self.nearest_humidity_station:
-            print(f"💾 Använder cachad närmaste station: {self.nearest_humidity_station}")
-            return self.nearest_humidity_station
-        
-        url = f"{self.METOBS_BASE_URL}/version/{self.METOBS_VERSION}/parameter/{self.HUMIDITY_PARAMETER}.json"
-        
-        try:
-            print(f"🔍 Söker närmaste luftfuktighetsstation: {url}")
-            
-            response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            if 'station' not in data:
-                print("❌ Ingen station-data från SMHI observations API")
-                return self._get_fallback_station()
-            
-            stations = data['station']
-            print(f"📍 Hittade {len(stations)} luftfuktighetsstationer")
-            
-            # Hitta närmaste aktiva station
-            nearest_station = None
-            min_distance = float('inf')
-            
-            for station in stations:
-                # Kontrollera att stationen är aktiv (har from/to datum)
-                if not station.get('active', True):
-                    continue
-                
-                # Kontrollera att vi har koordinater
-                if 'latitude' not in station or 'longitude' not in station:
-                    continue
-                
-                try:
-                    station_lat = float(station['latitude'])
-                    station_lon = float(station['longitude'])
-                    station_id = int(station['id'])
-                    
-                    # Beräkna avstånd
-                    distance = self._calculate_distance(
-                        self.latitude, self.longitude,
-                        station_lat, station_lon
-                    )
-                    
-                    if distance < min_distance:
-                        min_distance = distance
-                        nearest_station = station_id
-                        
-                except (ValueError, TypeError) as e:
-                    print(f"⚠️ Fel vid parsning av station {station.get('id', 'N/A')}: {e}")
-                    continue
-            
-            if nearest_station:
-                self.nearest_humidity_station = nearest_station
-                print(f"✅ Närmaste luftfuktighetsstation: {nearest_station} (avstånd: {min_distance:.1f} km)")
-                return nearest_station
-            else:
-                print("❌ Ingen giltig närmaste station hittad")
-                return self._get_fallback_station()
-                
-        except requests.exceptions.Timeout:
-            print(f"⏰ Timeout vid sökning av närmaste station ({self.REQUEST_TIMEOUT}s)")
-            return self._get_fallback_station()
-        except requests.exceptions.RequestException as e:
-            print(f"🌐 Nätverksfel vid stationssökning: {e}")
-            return self._get_fallback_station()
-        except Exception as e:
-            print(f"❌ Oväntat fel vid stationssökning: {e}")
-            return self._get_fallback_station()
-    
-    def _get_fallback_station(self) -> int:
-        """
-        Returnera fallback-station baserat på position.
-        
-        Returns:
-            Station ID för närmaste fallback-station
-        """
-        # Välj fallback baserat på ungefärlig position i Sverige
-        if self.latitude >= 58.5:  # Norra/mellersta Sverige
-            fallback = self.HUMIDITY_FALLBACK_STATIONS[0]  # Stockholm
-        elif self.latitude >= 56.5:  # Västra Sverige
-            fallback = self.HUMIDITY_FALLBACK_STATIONS[1]  # Göteborg
-        else:  # Södra Sverige
-            fallback = self.HUMIDITY_FALLBACK_STATIONS[2]  # Malmö
-        
-        print(f"🔄 Använder fallback-station: {fallback}")
-        return fallback
-    
-    def get_station_humidity(self, station_id: Optional[int] = None) -> Optional[Dict]:
-        """
-        Hämta luftfuktighet från SMHI meteorologiska observations-API.
-        
-        Args:
-            station_id: Specifik station (None = auto-detect närmaste)
-            
-        Returns:
-            Dict med {'value': float, 'timestamp': str, 'station_name': str, 'data_age_minutes': int}
-            eller None vid fel
-        """
-        # Kontrollera cache först
-        if (self.humidity_cache and 
-            self.humidity_cache_time and 
-            time.time() - self.humidity_cache_time < self.humidity_cache_duration):
-            print("💾 Använder cachad luftfuktighetsdata")
-            return self.humidity_cache
-        
-        # Bestäm station
-        if station_id is None:
-            station_id = self.find_nearest_humidity_station()
-            if station_id is None:
-                print("❌ Ingen luftfuktighetsstation tillgänglig")
-                return None
-        
-        url = (f"{self.METOBS_BASE_URL}/version/{self.METOBS_VERSION}/"
-               f"parameter/{self.HUMIDITY_PARAMETER}/station/{station_id}/"
-               f"period/latest-hour/data.json")
-        
-        try:
-            print(f"💧 Hämtar luftfuktighet från station {station_id}: {url}")
-            
-            response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
-            response.raise_for_status()
-            
-            data = response.json()
-            
-            if 'value' not in data or not data['value']:
-                print(f"❌ Ingen luftfuktighetsdata för station {station_id}")
-                return None
-            
-            # Ta senaste värdet
-            latest_value = data['value'][-1]
-            
-            humidity_value = float(latest_value['value'])
-            timestamp_raw = latest_value['date']
-            
-            # Konvertera timestamp och beräkna ålder - hantera både unix timestamp och ISO-format
-            try:
-                if isinstance(timestamp_raw, int):
-                    # Unix timestamp (observations API)
-                    timestamp = datetime.fromtimestamp(timestamp_raw, tz=timezone.utc)
-                    timestamp_str = timestamp.isoformat()
-                elif isinstance(timestamp_raw, str):
-                    # ISO format (annat API)
-                    timestamp_str = timestamp_raw
-                    timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
-                else:
-                    raise ValueError(f"Okänt timestamp-format: {type(timestamp_raw)}")
-                
-                now = datetime.now(timezone.utc)
-                age_minutes = int((now - timestamp).total_seconds() / 60)
-                
-                # Validera data-ålder (max 2 timmar)
-                if age_minutes > 120:
-                    print(f"⚠️ Luftfuktighetsdata för gammal: {age_minutes} minuter")
-                    return None
-                
-            except (ValueError, TypeError) as e:
-                print(f"⚠️ Fel vid parsning av timestamp {timestamp_raw}: {e}")
-                # Använd aktuell tid som fallback
-                timestamp_str = datetime.now(timezone.utc).isoformat()
-                age_minutes = 0
-            
-            # Bygg resultat
-            result = {
-                'value': humidity_value,
-                'timestamp': timestamp_str,
-                'station_id': station_id,
-                'station_name': f"SMHI Station {station_id}",
-                'data_age_minutes': age_minutes
-            }
-            
-            # Cache resultat
-            self.humidity_cache = result
-            self.humidity_cache_time = time.time()
-            
-            print(f"✅ Luftfuktighet: {humidity_value}% (ålder: {age_minutes} min)")
-            return result
-            
-        except requests.exceptions.Timeout:
-            print(f"⏰ Timeout vid hämtning av luftfuktighet från station {station_id}")
-            return None
-        except requests.exceptions.RequestException as e:
-            print(f"🌐 Nätverksfel vid luftfuktighetshämtning: {e}")
-            return None
-        except (ValueError, TypeError) as e:
-            print(f"📋 Fel vid parsning av luftfuktighetsdata: {e}")
-            return None
-        except Exception as e:
-            print(f"❌ Oväntat fel vid luftfuktighetshämtning: {e}")
-            return None
-    
-    def get_current_weather_with_humidity(self) -> Optional[Dict]:
-        """
-        Utökad version av get_current_weather() som inkluderar luftfuktighet.
-        
-        Returns:
-            Befintlig väderdata + 'humidity', 'humidity_timestamp', 'humidity_station'
-            eller None vid fel
-        """
-        # Hämta standard väderdata
-        weather_data = self.get_current_weather()
-        if not weather_data:
-            print("❌ Ingen grundläggande väderdata tillgänglig")
-            return None
-        
-        # Försök hämta luftfuktighet
-        humidity_data = self.get_station_humidity()
-        if humidity_data:
-            weather_data['humidity'] = humidity_data['value']
-            weather_data['humidity_timestamp'] = humidity_data['timestamp']
-            weather_data['humidity_station'] = humidity_data['station_name']
-            weather_data['humidity_age_minutes'] = humidity_data['data_age_minutes']
-            print(f"✅ Väderdata utökad med luftfuktighet: {humidity_data['value']}%")
-        else:
-            print("⚠️ Luftfuktighet ej tillgänglig - returnerar väderdata utan humidity")
-            weather_data['humidity'] = None
-            weather_data['humidity_timestamp'] = None
-            weather_data['humidity_station'] = None
-            weather_data['humidity_age_minutes'] = None
-        
-        return weather_data
-    
-    # === BEFINTLIGA METODER (INGA ÄNDRINGAR) ===
     
     def get_forecast_url(self) -> str:
         """Bygg URL för SMHI API-anrop."""
@@ -428,106 +165,72 @@ class SMHIClient:
         Tolka parametrar från en tidpunkt i SMHI-data.
         
         Args:
-            time_entry: En tidpunkt från timeSeries-array
+            time_entry: En entry från timeSeries-arrayen
             
         Returns:
-            Dict med tolkade parametrar
+            Dict med tolkade väderparametrar
         """
-        result = {}
+        weather = {}
+        parameters = time_entry.get('parameters', [])
         
-        if 'parameters' not in time_entry:
-            return result
-        
-        for param in time_entry['parameters']:
+        for param in parameters:
             param_name = param.get('name')
-            values = param.get('values', [])
+            param_values = param.get('values', [])
             
-            if param_name in self.PARAMETERS and values:
-                friendly_name = self.PARAMETERS[param_name]
-                result[friendly_name] = values[0]  # Ta första värdet
+            if param_name in self.PARAMETERS and param_values:
+                # Ta första värdet (SMHI kan ha flera values per parameter)
+                value = param_values[0]
+                key = self.PARAMETERS[param_name]
+                weather[key] = value
         
-        return result
+        return weather
     
-    def _get_animation_trigger(self, weather_symbol: int, precipitation: float, wind_direction: float = None) -> Dict:
+    def _get_animation_trigger(self, weather_symbol: int, precipitation: float = 0, wind_direction: float = None) -> Dict:
         """
-        WEATHER ANIMATIONS: Mappa SMHI weather symbol till animation trigger data
+        WEATHER ANIMATIONS: Bestäm animation trigger baserat på vädersymbol.
         
         Args:
-            weather_symbol: SMHI weather symbol (1-27)
-            precipitation: Nederbörd i mm/h
-            wind_direction: Vindriktning i grader (0-360)
+            weather_symbol: SMHI vädersymbol (1-27)
+            precipitation: Nederbörd i mm/h (används för intensitet)
+            wind_direction: Vindriktning i grader (används för vindanimationer)
             
         Returns:
-            Dict med animation trigger information
+            Dict med animation-information
         """
-        if not weather_symbol:
-            return {'type': 'clear'}
+        # Hitta animation-typ baserat på symbol
+        animation_type = 'clear'  # Default
+        intensity = 'light'
         
-        try:
-            symbol = int(weather_symbol)
-        except (ValueError, TypeError):
-            print(f"⚠️ Invalid weather symbol: {weather_symbol}")
-            return {'type': 'clear'}
-        
-        # Bestäm animation type baserat på SMHI symbol
-        animation_type = None
         for anim_type, symbols in self.ANIMATION_MAPPING.items():
-            if symbol in symbols:
+            if weather_symbol in symbols:
                 animation_type = anim_type
                 break
         
-        if not animation_type or animation_type == 'clear':
-            return {'type': 'clear'}
+        # Bestäm intensitet baserat på nederbörd och symbol
+        if precipitation > 5:
+            intensity = 'heavy'
+        elif precipitation > 1:
+            intensity = 'medium'
+        elif precipitation > 0.1:
+            intensity = 'light'
         
-        # Beräkna intensity baserat på nederbörd
-        intensity = self._calculate_animation_intensity(precipitation)
+        # Special-hantering för kraftiga vädersymboler
+        if weather_symbol in [10, 20, 27]:  # Kraftigt regn/snö
+            intensity = 'heavy'
+        elif weather_symbol in [9, 19, 26]:  # Måttligt regn/snö
+            intensity = 'medium'
         
-        # Skapa animation trigger data
-        trigger_data = {
+        return {
             'type': animation_type,
             'intensity': intensity,
-            'symbol': symbol,
-            'precipitation': precipitation or 0
+            'symbol': weather_symbol,
+            'precipitation': precipitation,
+            'wind_direction': wind_direction
         }
-        
-        # Lägg till vinddata om tillgängligt
-        if wind_direction is not None:
-            trigger_data['wind_direction'] = wind_direction
-        
-        # Special handling för åska
-        if animation_type == 'thunder':
-            # Åska kan kombineras med regn
-            if symbol in [11]:  # Åska med regn
-                trigger_data['type'] = 'rain'  # Använd regn-animation
-                trigger_data['thunder'] = True
-            else:
-                trigger_data['type'] = 'clear'  # Bara åska utan nederbörd
-        
-        print(f"🌦️ Animation trigger: Symbol {symbol} → {trigger_data['type']} ({intensity})")
-        return trigger_data
-    
-    def _calculate_animation_intensity(self, precipitation: float) -> str:
-        """
-        Beräkna animation intensity baserat på nederbörd
-        
-        Args:
-            precipitation: Nederbörd i mm/h
-            
-        Returns:
-            Intensity level som sträng
-        """
-        if not precipitation or precipitation < 0.1:
-            return 'light'
-        elif precipitation < 2.0:
-            return 'medium'
-        elif precipitation < 5.0:
-            return 'heavy'
-        else:
-            return 'extreme'
     
     def get_current_weather(self) -> Optional[Dict]:
         """
-        Hämta aktuell väderdata (närmaste tidpunkt) med animation trigger support.
+        Hämta aktuellt väder med animation trigger.
         
         Returns:
             Dict med aktuell väderdata inkl. animation_trigger eller None
@@ -756,9 +459,9 @@ class SMHIClient:
                 if valid_time <= now:
                     continue
                 
-                # Begränsa till antal dagar
+                # DAGSPROGNOS-FIX: Hoppa över idag (days_diff = 0) för att få exakt rätt antal dagar
                 days_diff = (valid_time - now).days
-                if days_diff >= days:
+                if days_diff >= days or days_diff < 1:
                     continue
                 
                 date_key = valid_time.date()
@@ -817,9 +520,23 @@ class SMHIClient:
             # Vanligaste vädersymbol
             symbols = day_data['weather_symbols']
             if symbols:
-                summary['weather_symbol'] = max(set(symbols), key=symbols.count)
+                # Räkna förekomster av varje symbol
+                symbol_counts = {}
+                for symbol in symbols:
+                    symbol_counts[symbol] = symbol_counts.get(symbol, 0) + 1
+                
+                # Ta den vanligaste
+                most_common_symbol = max(symbol_counts, key=symbol_counts.get)
+                summary['weather_symbol'] = most_common_symbol
+                
+                # Lägg till animation trigger för vanligaste symbolen
+                summary['animation_trigger'] = self._get_animation_trigger(
+                    most_common_symbol,
+                    max(day_data['precipitations']) if day_data['precipitations'] else 0,
+                    None
+                )
             
-            # Genomsnittlig vindstyrka
+            # Vind-genomsnitt
             winds = day_data['wind_speeds']
             if winds:
                 summary['wind_speed_avg'] = sum(winds) / len(winds)
@@ -831,29 +548,283 @@ class SMHIClient:
                 summary['precipitation_total'] = sum(precips)
                 summary['precipitation_max'] = max(precips)
             
-            # Dominant animation trigger för dagen
-            triggers = day_data['animation_triggers']
-            if triggers:
-                # Hitta vanligaste animation type
-                trigger_types = [t['type'] for t in triggers if t['type'] != 'clear']
-                if trigger_types:
-                    dominant_type = max(set(trigger_types), key=trigger_types.count)
-                    # Använd första instansen av dominant type för full trigger data
-                    for trigger in triggers:
-                        if trigger['type'] == dominant_type:
-                            summary['animation_trigger'] = trigger
-                            break
-                else:
-                    summary['animation_trigger'] = {'type': 'clear'}
-            
             daily_forecast.append(summary)
         
+        print(f"📅 Dagsprognos klar: {len(daily_forecast)} dagar med animation triggers")
         return daily_forecast
+    
+    # === FAS 1: SMHI LUFTFUKTIGHET FUNKTIONER ===
+    
+    def find_nearest_humidity_station(self) -> Optional[str]:
+        """
+        FAS 1: Hitta närmaste aktiva luftfuktighetsstation.
+        
+        Returns:
+            Station-ID som sträng eller None om ingen hittades
+        """
+        try:
+            url = f"{self.METOBS_BASE_URL}/version/{self.METOBS_VERSION}/parameter/{self.HUMIDITY_PARAMETER}.json"
+            print(f"🔍 Söker närmaste luftfuktighetsstation: {url}")
+            
+            response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            
+            data = response.json()
+            stations = data.get('station', [])
+            
+            if not stations:
+                print("❌ Inga luftfuktighetsstationer hittades")
+                return None
+            
+            # Filtrera aktiva stationer
+            active_stations = [s for s in stations if s.get('active', False)]
+            print(f"📍 Hittade {len(active_stations)} luftfuktighetsstationer")
+            
+            if not active_stations:
+                print("⚠️ Inga aktiva luftfuktighetsstationer - använder fallback")
+                # Använd fallback-stationer
+                for fallback_id in self.HUMIDITY_FALLBACK_STATIONS:
+                    fallback_str = str(fallback_id)
+                    if any(s['key'] == fallback_str for s in stations):
+                        print(f"✅ Använder fallback-station: {fallback_id}")
+                        return fallback_str
+                return None
+            
+            # Hitta närmaste station
+            min_distance = float('inf')
+            nearest_station = None
+            
+            for station in active_stations:
+                try:
+                    lat = float(station['latitude'])
+                    lon = float(station['longitude'])
+                    
+                    # Beräkna ungefärligt avstånd (Haversine-approximation)
+                    distance = self._calculate_distance(self.latitude, self.longitude, lat, lon)
+                    
+                    if distance < min_distance:
+                        min_distance = distance
+                        nearest_station = station
+                        
+                except (ValueError, KeyError):
+                    continue
+            
+            if nearest_station:
+                station_id = nearest_station['key']
+                print(f"✅ Närmaste luftfuktighetsstation: {station_id} (avstånd: {min_distance:.1f} km)")
+                return station_id
+            else:
+                print("❌ Kunde inte beräkna avstånd till några stationer")
+                return None
+                
+        except Exception as e:
+            print(f"❌ Fel vid sökning av luftfuktighetsstation: {e}")
+            return None
+    
+    def _calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """
+        FAS 1: Beräkna avstånd mellan två koordinater (Haversine-formel).
+        
+        Returns:
+            Avstånd i kilometer
+        """
+        R = 6371  # Jordens radie i km
+        
+        # Konvertera grader till radianer
+        lat1_rad = math.radians(lat1)
+        lon1_rad = math.radians(lon1)
+        lat2_rad = math.radians(lat2)
+        lon2_rad = math.radians(lon2)
+        
+        # Haversine-formel
+        dlat = lat2_rad - lat1_rad
+        dlon = lon2_rad - lon1_rad
+        
+        a = (math.sin(dlat / 2) ** 2 + 
+             math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2) ** 2)
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        
+        return R * c
+    
+    def get_station_humidity(self, station_id: Optional[str] = None) -> Optional[Dict]:
+        """
+        FAS 1: Hämta luftfuktighetsdata från SMHI observations-API.
+        
+        Args:
+            station_id: Specifik station-ID eller None för auto-hitta
+            
+        Returns:
+            Dict med luftfuktighetsdata eller None
+        """
+        # Kontrollera cache
+        if (self.humidity_cache and 
+            self.humidity_last_fetch and 
+            time.time() - self.humidity_last_fetch < self.humidity_cache_duration):
+            print("💾 Använder cachad luftfuktighetsdata")
+            return self.humidity_cache
+        
+        # Hitta station om inte specificerad
+        if not station_id:
+            station_id = self.find_nearest_humidity_station()
+            if not station_id:
+                return None
+        
+        try:
+            url = (f"{self.METOBS_BASE_URL}/version/{self.METOBS_VERSION}/"
+                   f"parameter/{self.HUMIDITY_PARAMETER}/station/{station_id}/"
+                   f"period/latest-hour/data.json")
+            
+            print(f"💧 Hämtar luftfuktighet från station {station_id}: {url}")
+            
+            response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            
+            data = response.json()
+            values = data.get('value', [])
+            
+            if not values:
+                print(f"❌ Ingen luftfuktighetsdata från station {station_id}")
+                return None
+            
+            # Ta senaste mätning
+            latest = values[-1]
+            value = latest.get('value')
+            timestamp_ms = latest.get('date')
+            
+            if value is None or timestamp_ms is None:
+                print("❌ Ogiltig luftfuktighetsdata")
+                return None
+            
+            # Konvertera timestamp (SMHI använder millisekunder sedan 1970)
+            try:
+                timestamp = timestamp_ms / 1000  # Konvertera till sekunder
+                measurement_time = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+            except (ValueError, OSError) as e:
+                print(f"⚠️ Fel vid parsning av timestamp {timestamp_ms}: {e}")
+                # Fallback: använd nuvarande tid
+                measurement_time = datetime.now(timezone.utc)
+            
+            # Beräkna ålder på data
+            now = datetime.now(timezone.utc)
+            data_age_seconds = (now - measurement_time).total_seconds()
+            data_age_minutes = int(data_age_seconds / 60)
+            
+            # Hämta stationsnamn
+            station_info = data.get('station', {})
+            station_name = station_info.get('name', f'SMHI Station {station_id}')
+            
+            humidity_data = {
+                'value': float(value),
+                'timestamp': measurement_time.isoformat(),
+                'data_age_minutes': data_age_minutes,
+                'station_id': station_id,
+                'station_name': station_name,
+                'unit': '%'
+            }
+            
+            print(f"✅ Luftfuktighet: {value}% (ålder: {data_age_minutes} min)")
+            
+            # Cache resultatet
+            self.humidity_cache = humidity_data
+            self.humidity_last_fetch = time.time()
+            
+            return humidity_data
+            
+        except Exception as e:
+            print(f"❌ Fel vid hämtning av luftfuktighet: {e}")
+            return None
+    
+    def get_current_weather_with_humidity(self) -> Optional[Dict]:
+        """
+        FAS 1: Hämta aktuellt väder utökat med luftfuktighetsdata från SMHI observations-API.
+        
+        Returns:
+            Befintlig väderdata + 'humidity', 'humidity_timestamp', 'humidity_station'
+            eller None vid fel
+        """
+        # Hämta standard väderdata
+        weather_data = self.get_current_weather()
+        if not weather_data:
+            print("❌ Ingen grundläggande väderdata tillgänglig")
+            return None
+        
+        # Försök hämta luftfuktighet
+        humidity_data = self.get_station_humidity()
+        if humidity_data:
+            weather_data['humidity'] = humidity_data['value']
+            weather_data['humidity_timestamp'] = humidity_data['timestamp']
+            weather_data['humidity_station'] = humidity_data['station_name']
+            weather_data['humidity_age_minutes'] = humidity_data['data_age_minutes']
+            print(f"✅ Väderdata utökad med luftfuktighet: {humidity_data['value']}%")
+        else:
+            print("⚠️ Luftfuktighet ej tillgänglig - returnerar väderdata utan humidity")
+            weather_data['humidity'] = None
+            weather_data['humidity_timestamp'] = None
+            weather_data['humidity_station'] = None
+            weather_data['humidity_age_minutes'] = None
+        
+        return weather_data
+    
+    # === BEFINTLIGA METODER (INGA ÄNDRINGAR) ===
+    
+    def get_forecast_url(self) -> str:
+        """Bygg URL för SMHI API-anrop."""
+        return (
+            f"{self.BASE_URL}/category/{self.CATEGORY}/version/{self.VERSION}/"
+            f"geotype/point/lon/{self.longitude}/lat/{self.latitude}/data.json"
+        )
+    
+    def fetch_raw_data(self) -> Optional[Dict]:
+        """
+        Hämta rådata från SMHI API.
+        
+        Returns:
+            Dict med rådata från SMHI eller None vid fel
+        """
+        url = self.get_forecast_url()
+        
+        try:
+            print(f"📡 Hämtar data från SMHI: {url}")
+            
+            response = requests.get(url, timeout=self.REQUEST_TIMEOUT)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Kontrollera att vi har korrekt data-struktur
+            if 'timeSeries' not in data:
+                print("❌ Ogiltig data-struktur från SMHI API")
+                return None
+            
+            print(f"✅ SMHI data hämtad - {len(data['timeSeries'])} tidpunkter")
+            
+            # Cache data
+            self.cached_data = data
+            self.last_fetch_time = time.time()
+            
+            return data
+            
+        except requests.exceptions.Timeout:
+            print(f"⏰ Timeout vid anrop till SMHI API ({self.REQUEST_TIMEOUT}s)")
+            return None
+        except requests.exceptions.ConnectionError:
+            print("🌐 Nätverksfel - kan inte nå SMHI API")
+            return None
+        except requests.exceptions.HTTPError as e:
+            print(f"🚫 HTTP-fel från SMHI API: {e}")
+            return None
+        except json.JSONDecodeError:
+            print("📋 Fel vid parsning av JSON från SMHI API")
+            return None
+        except Exception as e:
+            print(f"❌ Oväntat fel vid SMHI API-anrop: {e}")
+            return None
 
 
-# Test-funktioner för utveckling
+# === TEST FUNKTIONER ===
+
 def test_smhi_client():
-    """Test av SMHI-klient med Stockholm-koordinater och animation triggers."""
+    """Testfunktion för SMHI-klient med WEATHER ANIMATIONS."""
     print("🧪 Testar SMHI-klient med WEATHER ANIMATIONS integration...")
     
     # Stockholm koordinater
